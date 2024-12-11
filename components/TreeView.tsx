@@ -48,10 +48,9 @@ function TreeNode({ name, children, selectedKey, onSelectKey }: TreeNodeProps) {
       {isOpen && children.length > 0 && (
         <div className=" items-center">
           {children.map((key) => (
-            <div className="flex items-center ml-5">
+            <div className="flex items-center ml-5" key={key}>
             <Database className="h-4 w-4 mr-2" />
             <button
-              key={key}
               className={cn(
                 "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent",
                 selectedKey === `${name}_${key}` && "bg-accent"
