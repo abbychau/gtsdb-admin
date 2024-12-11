@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import favicon from "./favicon.png";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -16,6 +17,9 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "GTSDB Admin",
   description: "GTSDB ADMIN is a modern REST client for developers. by Abby",
+  icons: {
+    icon: favicon.src,
+  },
 };
 
 export default function RootLayout({
