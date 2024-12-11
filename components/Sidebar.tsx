@@ -11,6 +11,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey }: SidebarProps) {
+  //sort keys
+  keys.sort()
   return (
     <Card className="w-64 h-full flex flex-col">
       <CardHeader>
