@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
@@ -9,6 +9,7 @@ import { Loader2, Database } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import * as echarts from 'echarts'
 
 interface DataOperationsProps {
   selectedKey: string
@@ -29,6 +30,17 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
+
+  const chartRef = useRef<HTMLDivElement>(null)
+  const chartInstance = useRef<echarts.ECharts | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.dispose()
+      }
+    }
+  }, [])
 
   const handleRead = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,6 +74,108 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsReading(false)
+    }
+  }
+
+  const handleReadAndPlot = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsReading(true)
+    try {
+      const response = await fetch('/api/tsdb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'read',
+          Read: {
+            id: selectedKey,
+            start_timestamp: startTime ? parseInt(startTime) : undefined,
+            end_timestamp: endTime ? parseInt(endTime) : undefined,
+            downsampling: downsampling ? parseInt(downsampling) : undefined,
+            lastx: lastX ? parseInt(lastX) : undefined
+          }
+        })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setResult(data.data)
+        
+        // Plot the data
+        if (chartRef.current) {
+          if (chartInstance.current) {
+            chartInstance.current.dispose()
+          }
+          
+          chartInstance.current = echarts.init(chartRef.current)
+          const timestamps = data.data.data.map((item: any) => 
+            new Date(item.timestamp * 1000).toLocaleString()
+          )
+          const values = data.data.data.map((item: any) => item.value)
+          
+          const option = {
+            tooltip: {
+              trigger: 'axis',
+              position: function (pt: any) {
+                return [pt[0], '10%']
+              }
+            },
+            title: {
+              left: 'center',
+              text: `${selectedKey} Data Visualization`
+            },
+            toolbox: {
+              feature: {
+                dataZoom: {
+                  yAxisIndex: 'none'
+                },
+                restore: {},
+                saveAsImage: {}
+              }
+            },
+            xAxis: {
+              type: 'category',
+              boundaryGap: false,
+              data: timestamps
+            },
+            yAxis: {
+              type: 'value',
+              boundaryGap: [0, '100%']
+            },
+            dataZoom: [
+              {
+                type: 'inside',
+                start: 0,
+                end: 100
+              },
+              {
+                start: 0,
+                end: 100
+              }
+            ],
+            series: [
+              {
+                name: selectedKey,
+                type: 'line',
+                symbol: 'none',
+                sampling: 'lttb',
+                itemStyle: {
+                  color: 'rgb(255, 70, 131)'
+                },
+                data: values
+              }
+            ]
+          }
+
+          chartInstance.current.setOption(option)
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to read data. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -284,7 +398,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleRead} className="space-y-4">
+        <form onSubmit={handleReadAndPlot} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Start Timestamp</label>
             <div className="flex items-center space-x-2">
@@ -347,22 +461,39 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setLastXOption('clear')}>Clear</Button>
             </div>
           </div>
-          <Button type="submit" disabled={isReading}>
-            {isReading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Reading...
-              </>
-            ) : (
-              'Read'
-            )}
-          </Button>
+          <div className="flex space-x-2">
+            <Button type="submit" disabled={isReading}>
+              {isReading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Reading...
+                </>
+              ) : (
+                'Read'
+              )}
+            </Button>
+            <Button type="button" disabled={isReading} onClick={handleReadAndPlot}>
+              {isReading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Reading...
+                </>
+              ) : (
+                'Read and Plot'
+              )}
+            </Button>
+          </div>
         </form>
         {result && (
           <pre className="mt-4 p-2 bg-gray-100 rounded overflow-x-auto w-full">
             {JSON.stringify(result, null, 2)}
           </pre>
         )}
+        <div 
+          ref={chartRef} 
+          className="w-full h-[400px] mt-4"
+          style={{ display: result ? 'block' : 'none' }}
+        />
         <Separator className="my-4" />
         <form onSubmit={handleWrite} className="flex items-center space-x-2">
           <Input
