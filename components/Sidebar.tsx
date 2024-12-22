@@ -14,7 +14,7 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey }: S
   //sort keys
   keys.sort()
   return (
-    <Card className="w-64 h-full flex flex-col">
+    <Card className="w-64 h-full flex flex-col m-4 mr-0">
       <CardHeader>
         <CardTitle>All Keys</CardTitle>
       </CardHeader>

@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
+import { useSettings } from '../app/settings-context'
 
 interface DataOperationsProps {
   selectedKey: string
@@ -30,10 +31,13 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
+  const [requestPayload, setRequestPayload] = useState<any>(null)
 
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstance = useRef<echarts.ECharts | null>(null)
-
+  // Load settings
+  const { settings } = useSettings();
+  
   useEffect(() => {
     return () => {
       if (chartInstance.current) {
@@ -41,63 +45,41 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       }
     }
   }, [])
-
-  const handleRead = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsReading(true)
-    try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          operation: 'read',
-          Read: {
-            id: selectedKey,
-            start_timestamp: startTime ? parseInt(startTime) : undefined,
-            end_timestamp: endTime ? parseInt(endTime) : undefined,
-            downsampling: downsampling ? parseInt(downsampling) : undefined,
-            lastx: lastX ? parseInt(lastX) : undefined
-          }
-        })
-      })
-      const data = await response.json()
-      if (data.success) {
-        setResult(data.data)
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to read data. Please try again.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsReading(false)
+  const handleResize = () => {
+    if (chartInstance.current) {
+      chartInstance.current.resize()
     }
   }
+  // Clear data when key changes
+  useEffect(() => {
+    setResult(null)
+    if (chartInstance.current) {
+      chartInstance.current.dispose()
+      chartInstance.current = null
+    }
+  }, [selectedKey])
+
+  setInterval(handleResize, 1000)
 
   const handleReadAndPlot = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsReading(true)
+    const payload = {
+      operation: 'read',
+      Read: {
+        id: selectedKey,
+        start_timestamp: startTime ? parseInt(startTime) : undefined,
+        end_timestamp: endTime ? parseInt(endTime) : undefined,
+        downsampling: downsampling ? parseInt(downsampling) : undefined,
+        lastx: lastX ? parseInt(lastX) : undefined
+      }
+    }
+    setRequestPayload(payload)
     try {
       const response = await fetch('/api/tsdb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          operation: 'read',
-          Read: {
-            id: selectedKey,
-            start_timestamp: startTime ? parseInt(startTime) : undefined,
-            end_timestamp: endTime ? parseInt(endTime) : undefined,
-            downsampling: downsampling ? parseInt(downsampling) : undefined,
-            lastx: lastX ? parseInt(lastX) : undefined
-          }
-        })
+        body: JSON.stringify(payload)
       })
       const data = await response.json()
       if (data.success) {
@@ -170,8 +152,11 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           }
 
           chartInstance.current.setOption(option)
+          
         }
       }
+
+
     } catch (error) {
       toast({
         title: "Error",
@@ -484,16 +469,19 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             </Button>
           </div>
         </form>
+        {settings.showRequest && requestPayload && (
+          <pre className="mt-4 p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
+            {JSON.stringify(requestPayload, null, 2)}
+          </pre>
+        )}
         {result && (
-          <pre className="mt-4 p-2 bg-gray-100 rounded overflow-x-auto w-full">
+          <pre className="mt-4 p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
             {JSON.stringify(result, null, 2)}
           </pre>
         )}
-        <div 
-          ref={chartRef} 
-          className="w-full h-[400px] mt-4"
-          style={{ display: result ? 'block' : 'none' }}
-        />
+        {settings.showVisualization && (
+          <div ref={chartRef} style={{ width: '100%', height: '400px' }} />
+        )}
         <Separator className="my-4" />
         <form onSubmit={handleWrite} className="flex items-center space-x-2">
           <Input
