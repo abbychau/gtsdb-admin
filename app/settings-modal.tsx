@@ -43,7 +43,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           <div className="flex items-center justify-between">
             <Label htmlFor="show-request" className="flex flex-col space-y-1">
-              <span>Show Request Data</span>
+              <span>Show Request Payload</span>
               <span className="font-normal text-sm text-muted-foreground">
                 Display request payload information
               </span>

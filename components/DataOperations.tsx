@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Database } from 'lucide-react'
+import { Loader2, Database, Copy } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
 import { useSettings } from '../app/settings-context'
+import { copyToClipboard } from '@/lib/utils'
 
 interface DataOperationsProps {
   selectedKey: string
@@ -356,6 +357,15 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
   }
 
+  const handleCopy = (text: string, type: 'request' | 'response') => {
+    copyToClipboard(text);
+    toast({
+      title: "Copied!",
+      description: `${type === 'request' ? 'Request payload' : 'Response data'} copied to clipboard`,
+      duration: 2000,
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -457,30 +467,55 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
                 'Read'
               )}
             </Button>
-            <Button type="button" disabled={isReading} onClick={handleReadAndPlot}>
-              {isReading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Reading...
-                </>
-              ) : (
-                'Read and Plot'
-              )}
-            </Button>
           </div>
         </form>
         {settings.showRequest && requestPayload && (
-          <pre className="mt-4 p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
-            {JSON.stringify(requestPayload, null, 2)}
-          </pre>
+          <Card className="mt-4 shadow-none">
+            <CardHeader className="py-3">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium text-sm">Request Payload</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopy(JSON.stringify(requestPayload, null, 2), 'request')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <pre className="p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
+                {JSON.stringify(requestPayload, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
         )}
         {result && (
-          <pre className="mt-4 p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
-            {JSON.stringify(result, null, 2)}
-          </pre>
+          <Card className="mt-4 shadow-none">
+            <CardHeader className="py-3">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium text-sm">Response Data</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopy(JSON.stringify(result, null, 2), 'response')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <pre className="p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
         )}
+        
         {settings.showVisualization && (
-          <div ref={chartRef} style={{ width: '100%', height: '400px' }} />
+          <Card className='mt-4 shadow-none'>
+            <div ref={chartRef} style={{ width: '100%', height: '400px' }} />
+          </Card>
         )}
         <Separator className="my-4" />
         <form onSubmit={handleWrite} className="flex items-center space-x-2">
@@ -540,6 +575,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+
+      
     </Card>
   )
 }

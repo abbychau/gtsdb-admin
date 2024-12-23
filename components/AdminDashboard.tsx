@@ -128,6 +128,26 @@ export default function AdminDashboard() {
         ) : (
           <p className="text-muted-foreground">Select a key from the sidebar to perform operations.</p>
         )}
+
+        {// footer about message
+        }
+        <div className="mt-4 text-muted-foreground text-sm">
+          <p>
+            GTSDB is a time-series database built with Natively no-dep in Golang.
+          </p>
+          <p>
+            <a
+              href="https://github.com/abbychau/gtsdb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              View source code on GitHub
+            </a>
+          </p>
+
+        </div>
+
       </div>
       <InitKeyModal
         isOpen={isInitKeyModalOpen}

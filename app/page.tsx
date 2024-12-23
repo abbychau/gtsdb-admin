@@ -20,14 +20,6 @@ export default function Home() {
           >
             <Settings className="h-5 w-5" />
           </Button>
-          <a 
-            href="https://gtsdb-homepage.vercel.app/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center"
-          >
-            <Globe className="h-6 w-6 mr-2" />
-          </a>
         </div>
       </header>
       <div className="flex-1 overflow-hidden">

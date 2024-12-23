@@ -34,10 +34,11 @@ export async function POST(req: Request) {
       case 'initkey':
       case 'deletekey':
       case 'rename':
+      case 'serverInfo':
         const data = await fetchFromAPI(body)
         return NextResponse.json({ success: true, data })
       default:
-        return NextResponse.json({ success: false, message: 'Invalid operation' }, { status: 400 })
+        return NextResponse.json({ success: false, message: 'BFF: Invalid operation' }, { status: 400 })
     }
   } catch (error) {
     console.error('Error in API route:', error)

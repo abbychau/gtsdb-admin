@@ -1,7 +1,14 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Plus, ServerIcon } from 'lucide-react'
 import { TreeView } from './TreeView'
+import { ServerInfo } from './ServerInfo'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { useState } from 'react'
 
 interface SidebarProps {
   keys: string[]
@@ -11,12 +18,27 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey }: SidebarProps) {
-  //sort keys
   keys.sort()
+
   return (
-    <Card className="w-64 h-full flex flex-col m-4 mr-0">
+    <Card className="w-64 h-[calc(100vh - 4)] flex flex-col m-4 mr-0">
       <CardHeader>
-        <CardTitle>All Keys</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>All Keys</CardTitle>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+              >
+                <ServerIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96">
+              <ServerInfo />
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto">
         <Button
