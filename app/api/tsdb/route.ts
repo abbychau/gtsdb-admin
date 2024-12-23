@@ -24,19 +24,53 @@ async function fetchFromAPI(body: any) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    
 
     switch (body.operation) {
+      case 'subscribe': {
+        const encoder = new TextEncoder()
+        const stream = new TransformStream()
+        const writer = stream.writable.getWriter()
+        console.log(body)
+        // Start SSE connection to API
+        fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(async response => {
+          console.log(response)
+          const reader = response.body?.getReader()
+          if (!reader) throw new Error('No reader available')
+          
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            await writer.write(encoder.encode(`data: ${new TextDecoder().decode(value)}\n\n`))
+          }
+        }).catch(error => {
+          console.error('SSE Error:', error)
+          writer.close()
+        })
+
+        return new Response(stream.readable, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        })
+      }
       case 'ids':
       case 'read':
       case 'write':
-      case 'subscribe':
       case 'unsubscribe':
       case 'initkey':
       case 'deletekey':
       case 'rename':
-      case 'serverInfo':
+      case 'serverInfo': {
         const data = await fetchFromAPI(body)
         return NextResponse.json({ success: true, data })
+      }
       default:
         return NextResponse.json({ success: false, message: 'BFF: Invalid operation' }, { status: 400 })
     }

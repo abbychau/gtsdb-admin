@@ -269,13 +269,18 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   }, [isSubscribed])
 
   const handleSubscribe = async () => {
+    toast({
+      title: "Subscribing (Work in Progress)",
+      description: `Subscribing to ${selectedKey}...`,
+    })
+    return
     try {
       const response = await fetch('/api/tsdb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'subscribe',
-          key: selectedKey
+          deviceId: selectedKey
         })
       })
       const data = await response.json()
