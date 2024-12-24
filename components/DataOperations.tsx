@@ -510,7 +510,14 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           <Card className="mt-4 shadow-none">
             <CardHeader className="py-3">
               <div className="flex justify-between items-center">
-                <h3 className="font-medium text-sm">Response Data</h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-medium text-sm">Response Data</h3>
+                  {result.data && (
+                    <span className="px-2 py-0.5 bg-gray-200 rounded-full text-xs">
+                      {result.data.length} records
+                    </span>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
