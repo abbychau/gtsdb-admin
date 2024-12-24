@@ -61,6 +61,7 @@ export async function POST(req: Request) {
         })
       }
       case 'ids':
+      case 'idswithcount':
       case 'read':
       case 'write':
       case 'unsubscribe':

@@ -92,9 +92,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         setResult(data.data)
         if (data.data.data == null) {
           toast({
-            title: "Warning",
+            title: "Info",
             description: "No data found for the given query.",
-            variant: "warning",
+            variant: "info",
           })
           return
         }

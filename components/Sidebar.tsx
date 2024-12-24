@@ -9,18 +9,22 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useState } from 'react'
-import { ScrollArea } from './ui/scroll-area'
+import { Input } from '@/components/ui/input'
 
 interface SidebarProps {
-  keys: string[]
+  keys: Array<{ key: string; count: number }>;  // Modified type to include count
   selectedKey: string | null
   onSelectKey: (key: string) => void
   onInitKey: () => void
-  onRefreshKeys: () => void  // Add this prop
+  onRefreshKeys: () => void
 }
 
 export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys }: SidebarProps) {
-  keys.sort()
+  const [filter, setFilter] = useState('')
+  console.log(keys)
+  const filteredKeys = keys?.filter(key => 
+    key.key.toLowerCase().includes(filter.toLowerCase())
+  )
 
   return (
     <Card className="w-64 h-[calc(100vh - 4)] flex flex-col m-4 mr-0">
@@ -58,8 +62,14 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onR
         >
           <Plus className="mr-2 h-4 w-4" /> Add Key
         </Button>
+        <Input
+          placeholder="Filter keys..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-full mb-4"
+        />
         <TreeView
-          keys={keys}
+          items={filteredKeys || []}
           selectedKey={selectedKey}
           onSelectKey={onSelectKey}
         />

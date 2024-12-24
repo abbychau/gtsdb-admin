@@ -7,7 +7,7 @@ import { toast } from '@/hooks/use-toast'
 import { InitKeyModal } from './InitKeyModal'
 
 export default function AdminDashboard() {
-  const [keys, setKeys] = useState<string[]>([])
+  const [keys, setKeys] = useState<Array<{ key: string; count: number }>>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [isInitKeyModalOpen, setIsInitKeyModalOpen] = useState(false)
 
@@ -19,7 +19,7 @@ export default function AdminDashboard() {
     const response = await fetch('/api/tsdb', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operation: 'ids' })
+      body: JSON.stringify({ operation: 'idswithcount' })
     })
     const data = await response.json()
     if (data.success) {
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
       })
       const data = await response.json()
       if (data.success) {
-        setKeys(prevKeys => [...prevKeys, keyName])
+        setKeys(prevKeys => [...prevKeys, { key: keyName, count: 0 }])
         toast({
           title: "Success",
           description: `Key "${keyName}" initialized successfully.`,
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
       })
       const data = await response.json()
       if (data.success) {
-        setKeys(prevKeys => prevKeys.filter(key => key !== keyName))
+        setKeys(prevKeys => prevKeys.filter(key => key.key !== keyName))
         toast({
           title: "Success",
           description: `Key "${keyName}" deleted successfully.`,
@@ -91,7 +91,9 @@ export default function AdminDashboard() {
       })
       const data = await response.json()
       if (data.success) {
-        setKeys(prevKeys => prevKeys.map(key => key === oldKey ? newKey : key))
+        setKeys(prevKeys => prevKeys.map(key => 
+          key.key === oldKey ? { ...key, id: newKey } : key
+        ))
         setSelectedKey(newKey)
         toast({
           title: "Success",

@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button'
 
 interface TreeNodeProps {
   name: string
-  children: string[]
+  children: Array<{ key: string; count: number }>
   selectedKey: string | null
   onSelectKey: (key: string) => void
+  count?: number
 }
 
-function TreeNode({ name, children, selectedKey, onSelectKey }: TreeNodeProps) {
+function TreeNode({ name, children, selectedKey, onSelectKey, count }: TreeNodeProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -29,36 +30,42 @@ function TreeNode({ name, children, selectedKey, onSelectKey }: TreeNodeProps) {
         
         <button
           className={cn(
-            "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent",
+            "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent  relative pr-12",
             selectedKey === name && "bg-accent"
           )}
-          onClick={() => 
-            {
-              if (children.length > 0) {
-                setIsOpen(!isOpen)
-              }else{
-                onSelectKey(name)
-              }
+          onClick={() => {
+            if (children.length > 0) {
+              setIsOpen(!isOpen)
+            } else {
+              onSelectKey(name)
             }
-          }
+          }}
         >
-          {name}
+          <span className="truncate">{name}</span>
+          {count !== undefined && (
+            <span className="absolute right-2 px-2 py-0.5 bg-gray-200 rounded-full text-xs">
+              {count}
+            </span>
+          )}
         </button>
       </div>
       {isOpen && children.length > 0 && (
-        <div className=" items-center">
-          {children.map((key) => (
-            <div className="flex items-center ml-5" key={key}>
-            <Database className="h-4 w-4 mr-2" />
-            <button
-              className={cn(
-                "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent",
-                selectedKey === `${name}_${key}` && "bg-accent"
-              )}
-              onClick={() => onSelectKey(`${name}_${key}`)}
-            >
-              {key}
-            </button>
+        <div className="items-center">
+          {children.map((item) => (
+            <div className="flex items-center ml-5" key={`${name}_${item.key}`}>
+              <Database className="h-4 w-4 mr-2" />
+              <button
+                className={cn(
+                  "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent relative pr-12",
+                  selectedKey === `${name}_${item.key}` && "bg-accent"
+                )}
+                onClick={() => onSelectKey(`${name}_${item.key}`)}
+              >
+                <span className="truncate">{item.key}</span>
+                <span className="absolute right-2 px-2 py-0.5 bg-gray-200 rounded-full text-xs">
+                  {item.count}
+                </span>
+              </button>
             </div>
           ))}
         </div>
@@ -68,34 +75,35 @@ function TreeNode({ name, children, selectedKey, onSelectKey }: TreeNodeProps) {
 }
 
 interface TreeViewProps {
-  keys: string[]
+  items: Array<{ key: string; count: number }>
   selectedKey: string | null
   onSelectKey: (key: string) => void
 }
 
-export function TreeView({ keys, selectedKey, onSelectKey }: TreeViewProps) {
-  const groupedKeys = keys.reduce((acc, key) => {
-    if (key.includes('_')) {
-      const [prefix, ...rest] = key.split('_')
+export function TreeView({ items, selectedKey, onSelectKey }: TreeViewProps) {
+  const groupedItems = items.reduce((acc, item) => {
+    if (item.key.includes('_')) {
+      const [prefix, ...rest] = item.key.split('_')
       if (!acc[prefix]) {
         acc[prefix] = []
       }
-      acc[prefix].push(rest.join('_'))
+      acc[prefix].push({ key: rest.join('_'), count: item.count })
     } else {
-      acc[key] = []
+      acc[item.key] = []
     }
     return acc
-  }, {} as Record<string, string[]>)
+  }, {} as Record<string, Array<{ key: string; count: number }>>)
 
   return (
     <div className="space-y-2">
-      {Object.entries(groupedKeys).map(([prefix, children]) => (
+      {Object.entries(groupedItems).map(([prefix, children]) => (
         <TreeNode
           key={prefix}
           name={prefix}
           children={children}
           selectedKey={selectedKey}
           onSelectKey={onSelectKey}
+          count={children.length === 0 ? items.find(item => item.key === prefix)?.count : undefined}
         />
       ))}
     </div>
