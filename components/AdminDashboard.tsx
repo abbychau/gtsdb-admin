@@ -116,6 +116,7 @@ export default function AdminDashboard() {
         selectedKey={selectedKey}
         onSelectKey={setSelectedKey}
         onInitKey={() => setIsInitKeyModalOpen(true)}
+        onRefreshKeys={fetchKeys}  // Add this prop
       />
       <div className="flex-1 p-4 overflow-y-auto">
         {selectedKey ? (

@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, ServerIcon } from 'lucide-react'
+import { Plus, ServerIcon, RefreshCw } from 'lucide-react'
 import { TreeView } from './TreeView'
 import { ServerInfo } from './ServerInfo'
 import {
@@ -9,22 +9,24 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useState } from 'react'
+import { ScrollArea } from './ui/scroll-area'
 
 interface SidebarProps {
   keys: string[]
   selectedKey: string | null
   onSelectKey: (key: string) => void
   onInitKey: () => void
+  onRefreshKeys: () => void  // Add this prop
 }
 
-export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey }: SidebarProps) {
+export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys }: SidebarProps) {
   keys.sort()
 
   return (
     <Card className="w-64 h-[calc(100vh - 4)] flex flex-col m-4 mr-0">
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>All Keys</CardTitle>
+        <div className="flex justify-end items-center">
+          <CardTitle className='flex-1'>All Keys</CardTitle>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -38,6 +40,14 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey }: S
               <ServerInfo />
             </PopoverContent>
           </Popover>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onRefreshKeys}  // Changed from window.location.reload()
+            className="ml-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto">
