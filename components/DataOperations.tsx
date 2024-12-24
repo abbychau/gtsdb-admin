@@ -88,7 +88,17 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       })
       const data = await response.json()
       if (data.success) {
+
         setResult(data.data)
+        if (data.data.data == null) {
+          toast({
+            title: "Warning",
+            description: "No data found for the given query.",
+            variant: "warning",
+          })
+          return
+        }
+        
         
         // Plot the data
         if (chartRef.current) {
@@ -214,22 +224,18 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
 
   const setTimeOption = (field: 'start' | 'end', option: string) => {
     const now = Math.floor(Date.now() / 1000)
-    switch (option) {
-      case 'now':
-        field === 'start' ? setStartTime(now.toString()) : setEndTime(now.toString())
-        break
-      case '-1hr':
-        field === 'start' ? setStartTime((now - 3600).toString()) : setEndTime((now - 3600).toString())
-        break
-      case '-1day':
-        field === 'start' ? setStartTime((now - 86400).toString()) : setEndTime((now - 86400).toString())
-        break
-      case '-1week':
-        field === 'start' ? setStartTime((now - 604800).toString()) : setEndTime((now - 604800).toString())
-        break
-      case 'clear':
-        field === 'start' ? setStartTime('') : setEndTime('')
-        break
+    const timeMap: { [key: string]: number } = {
+      'now': now,
+      '-1hr': now - 3600,
+      '-1day': now - 86400,
+      '-1week': now - 604800,
+      'clear': 0
+    }
+
+    if (field === 'start') {
+      setStartTime(option === 'clear' ? '' : timeMap[option].toString())
+    } else {
+      setEndTime(option === 'clear' ? '' : timeMap[option].toString())
     }
   }
 
@@ -569,7 +575,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           <AlertDialogHeader>
             <AlertDialogTitle>Rename Key</AlertDialogTitle>
             <AlertDialogDescription>
-              Enter a new name for the key "{selectedKey}".
+              Enter a new name for the key &quot;{selectedKey}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input

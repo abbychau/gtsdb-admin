@@ -22,7 +22,7 @@ export function DeleteKeyModal({ isOpen, onClose, onConfirm, keyName }: DeleteKe
         <DialogHeader>
           <DialogTitle>Delete Key</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the key "{keyName}"? This action cannot be undone.
+            Are you sure you want to delete the key &quot;{keyName}&quot;? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
