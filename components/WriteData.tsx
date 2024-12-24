@@ -20,7 +20,7 @@ export default function WriteData({ selectedKey, onWrite }: WriteDataProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         operation: 'write',
-        Write: { id: selectedKey, Value: parseFloat(value) }
+        Write: { key: selectedKey, Value: parseFloat(value) }
       })
     })
     const data = await response.json()

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const API_URL = 'http://104.155.192.48:5556'
+const API_URL = 'http://gtsdb-web.abby.md'
 
 async function fetchFromAPI(body: any) {
   try {
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       case 'unsubscribe':
       case 'initkey':
       case 'deletekey':
-      case 'rename':
+      case 'renamekey':
       case 'serverInfo': {
         const data = await fetchFromAPI(body)
         return NextResponse.json({ success: true, data })

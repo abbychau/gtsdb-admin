@@ -87,7 +87,7 @@ export default function AdminDashboard() {
       const response = await fetch('/api/tsdb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ operation: 'rename', oldKey, newKey })
+        body: JSON.stringify({ operation: 'renamekey', Key: oldKey, toKey: newKey })
       })
       const data = await response.json()
       if (data.success) {

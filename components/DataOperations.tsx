@@ -31,7 +31,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [isWriting, setIsWriting] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
-  const [newKeyName, setNewKeyName] = useState('')
+  const [newKeyName, setNewKeyName] = useState(selectedKey)
   const [requestPayload, setRequestPayload] = useState<any>(null)
 
   const chartRef = useRef<HTMLDivElement>(null)
@@ -65,15 +65,19 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const handleReadAndPlot = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsReading(true)
+
+    const readPayload = {
+      start_timestamp: startTime ? parseInt(startTime) : undefined,
+      end_timestamp: endTime ? parseInt(endTime) : undefined,
+      downsampling: downsampling ? parseInt(downsampling) : undefined,
+      lastx: lastX ? parseInt(lastX) : undefined
+    };
+    // check if it is empty
+    const isEmpty = Object.keys(readPayload).length === 0 && readPayload.constructor === Object;
     const payload = {
       operation: 'read',
-      Read: {
-        id: selectedKey,
-        start_timestamp: startTime ? parseInt(startTime) : undefined,
-        end_timestamp: endTime ? parseInt(endTime) : undefined,
-        downsampling: downsampling ? parseInt(downsampling) : undefined,
-        lastx: lastX ? parseInt(lastX) : undefined
-      }
+      key: selectedKey,
+      Read: isEmpty ? undefined : readPayload
     }
     setRequestPayload(payload)
     try {
@@ -178,7 +182,8 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'write',
-          Write: { id: selectedKey, Value: parseFloat(writeValue) }
+          key: selectedKey,
+          Write: {  Value: parseFloat(writeValue) }
         })
       })
       const data = await response.json()
@@ -280,7 +285,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'subscribe',
-          deviceId: selectedKey
+          key: selectedKey
         })
       })
       const data = await response.json()
@@ -337,9 +342,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          operation: 'rename',
-          oldKey: selectedKey,
-          newKey: newKeyName
+          operation: 'renamekey',
+          Key: selectedKey,
+          toKey: newKeyName
         })
       })
       const data = await response.json()

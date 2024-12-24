@@ -24,7 +24,7 @@ export default function ReadData({ selectedKey }: ReadDataProps) {
       body: JSON.stringify({
         operation: 'read',
         Read: {
-          id: selectedKey,
+          key: selectedKey,
           start_timestamp: startTime ? parseInt(startTime) : undefined,
           end_timestamp: endTime ? parseInt(endTime) : undefined,
           downsampling: downsampling ? parseInt(downsampling) : undefined,
