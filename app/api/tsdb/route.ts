@@ -68,6 +68,7 @@ export async function POST(req: Request) {
       case 'initkey':
       case 'deletekey':
       case 'renamekey':
+      case 'multi-read':
       case 'serverInfo': {
         const data = await fetchFromAPI(body)
         return NextResponse.json({ success: true, data })
