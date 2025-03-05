@@ -1,38 +1,44 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from 'react';
 
+export const DEFAULT_API_URL = 'http://gtsdb-web.abby.md';
+
 interface Settings {
   showVisualization: boolean;
   showRequest: boolean;
   hostname: string;
   port: string;
+  apiUrl: string;
 }
+
+const defaultSettings: Settings = {
+  showVisualization: true,
+  showRequest: true,
+  hostname: '',
+  port: '',
+  apiUrl: DEFAULT_API_URL
+};
 
 const SettingsContext = createContext<{
   settings: Settings;
   updateSettings: (newSettings: Partial<Settings>) => void;
 }>({
-  settings: {
-    showVisualization: true,
-    showRequest: true,
-    hostname: '',
-    port: ''
-  },
+  settings: defaultSettings,
   updateSettings: () => {}
 });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-    const [settings, setSettings] = useState<Settings>({
-      showVisualization: true,
-      showRequest: true,
-      hostname: '',
-      port: ''
-    });
+    const [settings, setSettings] = useState<Settings>(defaultSettings);
   
     useEffect(() => {
       const saved = localStorage.getItem('gtsdb-settings');
       if (saved) {
-        setSettings(JSON.parse(saved));
+        const parsedSettings = JSON.parse(saved);
+        // Ensure apiUrl is never empty
+        setSettings({
+          ...parsedSettings,
+          apiUrl: parsedSettings.apiUrl || DEFAULT_API_URL
+        });
       }
     }, []);
   
@@ -40,7 +46,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const updated = { ...settings, ...newSettings };
       setSettings(updated);
       localStorage.setItem('gtsdb-settings', JSON.stringify(updated));
-      console.log(updated)
+      console.log('Settings updated:', updated);
     };
   
     return (

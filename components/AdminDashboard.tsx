@@ -5,23 +5,24 @@ import DataOperations from './DataOperations'
 import Sidebar from './Sidebar'
 import { toast } from '@/hooks/use-toast'
 import { InitKeyModal } from './InitKeyModal'
+import { fetchApi } from '@/lib/utils'
+import { useSettings } from '@/app/settings-context'
+
 
 export default function AdminDashboard() {
   const [keys, setKeys] = useState<Array<{ key: string; count: number }>>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [isInitKeyModalOpen, setIsInitKeyModalOpen] = useState(false)
-
+  const { settings } = useSettings()
   useEffect(() => {
     fetchKeys()
   }, [])
 
   const fetchKeys = async () => {
-    const response = await fetch('/api/tsdb', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const data = await fetchApi({
+      
       body: JSON.stringify({ operation: 'idswithcount' })
     })
-    const data = await response.json()
     if (data.success) {
       setKeys(data.data.data)
     }
@@ -29,12 +30,10 @@ export default function AdminDashboard() {
 
   const initKey = async (keyName: string) => {
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const data = await fetchApi({
+        
         body: JSON.stringify({ operation: 'initkey', key: keyName })
       })
-      const data = await response.json()
       if (data.success) {
         setKeys(prevKeys => [...prevKeys, { key: keyName, count: 0 }])
         toast({
@@ -55,12 +54,11 @@ export default function AdminDashboard() {
 
   const deleteKey = async (keyName: string) => {
     try {
-      const response = await fetch('/api/tsdb', {
+      const data = await fetch('/api/tsdb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operation: 'deletekey', key: keyName })
       })
-      const data = await response.json()
       if (data.success) {
         setKeys(prevKeys => prevKeys.filter(key => key.key !== keyName))
         toast({
@@ -84,12 +82,16 @@ export default function AdminDashboard() {
 
   const renameKey = async (oldKey: string, newKey: string) => {
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ operation: 'renamekey', Key: oldKey, toKey: newKey })
-      })
-      const data = await response.json()
+      const data = await fetchApi( 
+        {
+          
+          body: JSON.stringify({
+            operation: 'renamekey',
+            Key: oldKey,
+            toKey: newKey
+          })
+        }
+      )
       if (data.success) {
         setKeys(prevKeys => prevKeys.map(key => 
           key.key === oldKey ? { ...key, id: newKey } : key

@@ -25,6 +25,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="py-6 space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="apiUrl">API URL</Label>
+            <Input
+              id="apiUrl"
+              value={settings.apiUrl}
+              onChange={(e) => updateSettings({ apiUrl: e.target.value })}
+              placeholder="Enter API URL (e.g. http://gtsdb-web.abby.md)"
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <Label htmlFor="show-visualization" className="flex flex-col space-y-1">
               <span>Show Data Visualization</span>

@@ -11,7 +11,7 @@ import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
 import { useSettings } from '../app/settings-context'
-import { copyToClipboard } from '@/lib/utils'
+import { copyToClipboard, fetchApi } from '@/lib/utils'
 
 interface DataOperationsProps {
   selectedKey: string
@@ -81,12 +81,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
     setRequestPayload(payload)
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const data = await fetchApi({
+        
+        body: payload
       })
-      const data = await response.json()
       if (data.success) {
 
         setResult(data.data)
@@ -187,16 +185,14 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     e.preventDefault()
     setIsWriting(true)
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await fetchApi({
+        
+        body: {
           operation: 'write',
           key: selectedKey,
-          Write: {  Value: parseFloat(writeValue) }
-        })
+          Write: { Value: parseFloat(writeValue) }
+        }
       })
-      const data = await response.json()
       if (data.success) {
         setWriteValue('')
         onWrite()
@@ -286,15 +282,13 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     })
     return
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await fetchApi({
+        
+        body: {
           operation: 'subscribe',
           key: selectedKey
-        })
+        }
       })
-      const data = await response.json()
       if (data.success) {
         setIsSubscribed(true)
         toast({
@@ -315,15 +309,13 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
 
   const handleUnsubscribe = async () => {
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await fetchApi({
+        
+        body: {
           operation: 'unsubscribe',
           key: selectedKey
-        })
+        }
       })
-      const data = await response.json()
       if (data.success) {
         setIsSubscribed(false)
         toast({
@@ -344,16 +336,14 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
 
   const handleRename = async () => {
     try {
-      const response = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await fetchApi({
+        
+        body: {
           operation: 'renamekey',
           Key: selectedKey,
           toKey: newKeyName
-        })
+        }
       })
-      const data = await response.json()
       if (data.success) {
         onRename(selectedKey, newKeyName)
         toast({

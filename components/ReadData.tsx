@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { useSettings } from '../app/settings-context'
+import { fetchApi } from '@/lib/utils'
+
 
 interface ReadDataProps {
   selectedKey: string
@@ -15,13 +18,12 @@ export default function ReadData({ selectedKey }: ReadDataProps) {
   const [downsampling, setDownsampling] = useState('')
   const [lastX, setLastX] = useState('')
   const [result, setResult] = useState<any>(null)
-
+  const { settings } = useSettings()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const response = await fetch('/api/tsdb', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const data = await fetchApi({
+      
+      body: {
         operation: 'read',
         Read: {
           key: selectedKey,
@@ -30,9 +32,8 @@ export default function ReadData({ selectedKey }: ReadDataProps) {
           downsampling: downsampling ? parseInt(downsampling) : undefined,
           lastx: lastX ? parseInt(lastX) : undefined
         }
-      })
+      }
     })
-    const data = await response.json()
     if (data.success) {
       setResult(data.data)
     }

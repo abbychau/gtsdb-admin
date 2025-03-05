@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 
-const API_URL = 'http://gtsdb-web.abby.md'
-
-async function fetchFromAPI(body: any) {
+async function fetchFromAPI(body: any, apiUrl: string) {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -23,8 +21,11 @@ async function fetchFromAPI(body: any) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    
+    let body = await req.json()
+    const apiUrl = req.headers.get('x-api-url') || 'http://gtsdb-web.abby.md'
+    console.log('Server side: API URL:', apiUrl)
+    console.log('Server side: Request body:', body)
+    body = typeof body === 'string' ? JSON.parse(body) : body
 
     switch (body.operation) {
       case 'subscribe': {
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
         const writer = stream.writable.getWriter()
         console.log(body)
         // Start SSE connection to API
-        fetch(API_URL, {
+        fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
       case 'renamekey':
       case 'multi-read':
       case 'serverInfo': {
-        const data = await fetchFromAPI(body)
+        const data = await fetchFromAPI(body, apiUrl)
         return NextResponse.json({ success: true, data })
       }
       default:

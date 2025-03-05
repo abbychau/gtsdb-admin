@@ -21,13 +21,12 @@ interface SidebarProps {
 
 export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys }: SidebarProps) {
   const [filter, setFilter] = useState('')
-  console.log(keys)
   const filteredKeys = keys?.filter(key => 
     key.key.toLowerCase().includes(filter.toLowerCase())
-  )
+  ).sort((a, b) => a.key.localeCompare(b.key))
 
   return (
-    <Card className="w-64 h-[calc(100vh - 4)] flex flex-col m-4 mr-0">
+    <Card className="w-74 h-[calc(100vh - 4)] flex flex-col m-4 mr-0">
       <CardHeader>
         <div className="flex justify-end items-center">
           <CardTitle className='flex-1'>All Keys</CardTitle>

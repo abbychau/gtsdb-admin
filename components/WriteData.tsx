@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { useSettings } from '../app/settings-context'
+import { fetchApi } from '@/lib/utils'
 
 interface WriteDataProps {
   selectedKey: string
@@ -12,18 +14,17 @@ interface WriteDataProps {
 
 export default function WriteData({ selectedKey, onWrite }: WriteDataProps) {
   const [value, setValue] = useState('')
+  const { settings } = useSettings();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const response = await fetch('/api/tsdb', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const data = await fetchApi({
+      
+      body: {
         operation: 'write',
         Write: { key: selectedKey, Value: parseFloat(value) }
-      })
+      }
     })
-    const data = await response.json()
     if (data.success) {
       setValue('')
       onWrite()
