@@ -54,9 +54,7 @@ export default function AdminDashboard() {
 
   const deleteKey = async (keyName: string) => {
     try {
-      const data = await fetch('/api/tsdb', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const data = await fetchApi({
         body: JSON.stringify({ operation: 'deletekey', key: keyName })
       })
       if (data.success) {

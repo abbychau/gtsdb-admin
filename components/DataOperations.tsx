@@ -82,7 +82,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     setRequestPayload(payload)
     try {
       const data = await fetchApi({
-        
         body: payload
       })
       if (data.success) {

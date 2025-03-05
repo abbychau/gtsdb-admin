@@ -1,13 +1,26 @@
 "use client"
+import { useEffect, useState, useRef } from 'react'
 import AdminDashboard from '../components/AdminDashboard'
 import { Toaster } from '@/components/ui/toaster'
-import { Github, Globe, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 import { SettingsModal } from './settings-modal'
+import { useSettings } from './settings-context'
 
 export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { initializeFromURL } = useSettings();
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    const url = new URL(window.location.href);
+    const apiUrl = url.searchParams.get('apiurl');
+    if (apiUrl) {
+      initializeFromURL(apiUrl);
+    }
+    initialized.current = true;
+  }, [initializeFromURL]);
 
   return (
     <main className="h-screen flex flex-col">

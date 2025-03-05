@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent } from './ui/card'
 import { useSettings } from '@/app/settings-context'
+import { fetchApi } from '@/lib/utils'
 
 interface ServerStats {
   'key-count': number
@@ -15,14 +15,11 @@ export function ServerInfo() {
   useEffect(() => {
     const fetchServerInfo = async () => {
       try {
-        const response = await fetch('/api/tsdb', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        let data = await fetchApi({
           body: JSON.stringify({
             operation: 'serverInfo'
           })
         })
-        let data = await response.json()
         data = data.data
         if (data.success) {
           setStats(data.data)
@@ -54,7 +51,7 @@ export function ServerInfo() {
       <div className="grid gap-4">
         <div className="flex justify-between">
           <span className="text-sm font-extrabold">Connected Server</span>
-          <span className="text-sm">{settings.hostname==''?'<Hidden Host>':settings.hostname}:{settings.port==''?'<Hidden Port>':settings.port}</span>
+          <span className="text-sm">{settings.apiUrl == '' ? "<Demo Server>" : settings.apiUrl}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-sm font-extrabold">Version</span>
