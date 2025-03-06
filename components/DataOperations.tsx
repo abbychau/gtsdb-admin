@@ -253,13 +253,11 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
 
   const setLastXOption = (option: string) => {
     switch (option) {
-      case '5':
-      case '20':
-      case '100':
-        setLastX(option)
-        break
       case 'clear':
         setLastX('')
+        break
+      default:
+        setLastX(option)
         break
     }
   }
