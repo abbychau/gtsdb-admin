@@ -455,9 +455,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
                 onChange={(e) => setLastX(e.target.value)}
                 placeholder="Last X Records"
               />
-              <Button type="button" size="sm" onClick={() => setLastXOption('5')}>5</Button>
-              <Button type="button" size="sm" onClick={() => setLastXOption('20')}>20</Button>
+              <Button type="button" size="sm" onClick={() => setLastXOption('20')}>10</Button>
               <Button type="button" size="sm" onClick={() => setLastXOption('100')}>100</Button>
+              <Button type="button" size="sm" onClick={() => setLastXOption('500')}>500</Button>
+              <Button type="button" size="sm" onClick={() => setLastXOption('1000')}>1000</Button>
               <Button type="button" size="sm" onClick={() => setLastXOption('clear')}>Clear</Button>
             </div>
           </div>
