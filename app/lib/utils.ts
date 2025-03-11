@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { DEFAULT_API_URL } from '../app/settings-context'
+import { DEFAULT_API_URL } from '@/settings-context'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -28,15 +28,27 @@ const API_ENDPOINT = '/api/tsdb';
 
 export async function fetchApi(options: ApiOptions) {
   const { method = 'POST', body } = options;
-  const bodyString = body ? JSON.stringify(body) : undefined;
+  
+  // Get API URL from localStorage
   let apiUrl = DEFAULT_API_URL;
-  // get from local storage: gtsdb-settings
   const lsString = localStorage.getItem('gtsdb-settings');
   if (lsString) {
     const settings = JSON.parse(lsString);
     apiUrl = settings.apiUrl;
   }
-
+  
+  // Return empty response if API URL is not set
+  if (!apiUrl) {
+    console.warn('API URL is not set. Skipping API call.');
+    return { 
+      success: false, 
+      message: 'API URL is not configured. Please set it in settings.', 
+      data: { data: [] } 
+    };
+  }
+  
+  // Proceed with API call if URL is set
+  const bodyString = body ? JSON.stringify(body) : undefined;
   const response = await fetch(API_ENDPOINT, {
     method,
     headers: {
@@ -45,6 +57,6 @@ export async function fetchApi(options: ApiOptions) {
     },
     body: bodyString
   });
-
+  
   return await response.json();
 }

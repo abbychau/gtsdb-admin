@@ -1,26 +1,33 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import DataOperations from './DataOperations'
 import Sidebar from './Sidebar'
 import { toast } from '@/hooks/use-toast'
 import { InitKeyModal } from './InitKeyModal'
 import { fetchApi } from '@/lib/utils'
-import { useSettings } from '@/app/settings-context'
+import { useSettings } from '@/settings-context'
 
+interface AdminDashboardProps {
+  shouldLoadData?: boolean;
+}
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ shouldLoadData = true }: AdminDashboardProps) {
   const [keys, setKeys] = useState<Array<{ key: string; count: number }>>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [isInitKeyModalOpen, setIsInitKeyModalOpen] = useState(false)
+  const [hasLoadedData, setHasLoadedData] = useState(false)
   const { settings } = useSettings()
+
   useEffect(() => {
-    fetchKeys()
-  }, [])
+    // Only fetch keys if shouldLoadData is true and we haven't loaded data yet
+    if (shouldLoadData && !hasLoadedData) {
+      fetchKeys();
+      setHasLoadedData(true);
+    }
+  }, [shouldLoadData, hasLoadedData]);
 
   const fetchKeys = async () => {
     const data = await fetchApi({
-      
       body: JSON.stringify({ operation: 'idswithcount' })
     })
     if (data.success) {
@@ -31,7 +38,6 @@ export default function AdminDashboard() {
   const initKey = async (keyName: string) => {
     try {
       const data = await fetchApi({
-        
         body: JSON.stringify({ operation: 'initkey', key: keyName })
       })
       if (data.success) {
@@ -82,7 +88,6 @@ export default function AdminDashboard() {
     try {
       const data = await fetchApi( 
         {
-          
           body: JSON.stringify({
             operation: 'renamekey',
             Key: oldKey,
@@ -118,7 +123,7 @@ export default function AdminDashboard() {
         selectedKey={selectedKey}
         onSelectKey={setSelectedKey}
         onInitKey={() => setIsInitKeyModalOpen(true)}
-        onRefreshKeys={fetchKeys}  // Add this prop
+        onRefreshKeys={fetchKeys}
       />
       <div className="flex-1 p-4 overflow-y-auto">
         {selectedKey ? (
@@ -131,9 +136,7 @@ export default function AdminDashboard() {
         ) : (
           <p className="text-muted-foreground">Select a key from the sidebar to perform operations.</p>
         )}
-
-        {// footer about message
-        }
+        {/* footer about message */}
         <div className="mt-4 text-muted-foreground text-sm">
           <p>
             GTSDB is a time-series database built with Natively no-dep in Golang.
@@ -148,9 +151,7 @@ export default function AdminDashboard() {
               View source code on GitHub
             </a>
           </p>
-
         </div>
-
       </div>
       <InitKeyModal
         isOpen={isInitKeyModalOpen}

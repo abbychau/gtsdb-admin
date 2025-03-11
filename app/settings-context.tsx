@@ -1,7 +1,7 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from 'react';
 
-export const DEFAULT_API_URL = 'http://gtsdb-web.abby.md';
+export const DEFAULT_API_URL = '';
 
 interface Settings {
   showVisualization: boolean;
@@ -36,7 +36,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem('gtsdb-settings');
       if (saved) {
         const parsedSettings = JSON.parse(saved);
-        // Ensure apiUrl is never empty
+        // Only use saved apiUrl if it's not empty
         setSettings({
           ...parsedSettings,
           apiUrl: parsedSettings.apiUrl || DEFAULT_API_URL

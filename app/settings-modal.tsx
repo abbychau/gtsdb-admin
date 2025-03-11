@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { useSettings } from './settings-context'
-
+import { Button } from "@/components/ui/button"
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,7 +13,24 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateSettings } = useSettings();
+  const [localSettings, setLocalSettings] = useState(settings);
 
+  // Update local settings when the global settings change
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setLocalSettings({
+      ...localSettings,
+      [field]: value
+    });
+  };
+
+  const handleSave = () => {
+    updateSettings(localSettings);
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -29,8 +46,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Label htmlFor="apiUrl">API URL</Label>
             <Input
               id="apiUrl"
-              value={settings.apiUrl}
-              onChange={(e) => updateSettings({ apiUrl: e.target.value })}
+              value={localSettings.apiUrl}
+              onChange={(e) => handleInputChange('apiUrl', e.target.value)}
               placeholder="Enter API URL (e.g. http://gtsdb-web.abby.md)"
             />
           </div>
@@ -44,10 +61,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </Label>
             <Switch
               id="show-visualization"
-              checked={settings.showVisualization}
-              onCheckedChange={(checked) => {
-                updateSettings({ showVisualization: checked })
-              }}
+              checked={localSettings.showVisualization}
+              onCheckedChange={(checked) => handleInputChange('showVisualization', checked)}
             />
           </div>
 
@@ -60,8 +75,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </Label>
             <Switch
               id="show-request"
-              checked={settings.showRequest}
-              onCheckedChange={(checked) => updateSettings({ showRequest: checked })}
+              checked={localSettings.showRequest}
+              onCheckedChange={(checked) => handleInputChange('showRequest', checked)}
             />
           </div>
 
@@ -69,8 +84,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Label htmlFor="hostname">GTSDB Hostname</Label>
             <Input
               id="hostname"
-              value={settings.hostname}
-              onChange={(e) => updateSettings({ hostname: e.target.value })}
+              value={localSettings.hostname}
+              onChange={(e) => handleInputChange('hostname', e.target.value)}
               placeholder="Enter hostname"
             />
           </div>
@@ -79,10 +94,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Label htmlFor="port">GTSDB Port</Label>
             <Input
               id="port"
-              value={settings.port}
-              onChange={(e) => updateSettings({ port: e.target.value })}
+              value={localSettings.port}
+              onChange={(e) => handleInputChange('port', e.target.value)}
               placeholder="Enter port number"
             />
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave}>
+              Save Settings
+            </Button>
           </div>
         </div>
       </DialogContent>

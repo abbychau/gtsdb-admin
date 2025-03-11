@@ -8,9 +8,9 @@ import { Separator } from '@/components/ui/separator'
 import { Loader2, Database, Copy } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
-import { useSettings } from '../app/settings-context'
+import { useSettings } from '@/settings-context'
 import { copyToClipboard, fetchApi } from '@/lib/utils'
 
 interface DataOperationsProps {

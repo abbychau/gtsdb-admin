@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSettings } from '@/app/settings-context'
+import { useSettings } from '@/settings-context'
 import { fetchApi } from '@/lib/utils'
 
 interface ServerStats {

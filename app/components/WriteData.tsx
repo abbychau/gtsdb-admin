@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { useSettings } from '../app/settings-context'
+import { useSettings } from '@/settings-context'
 import { fetchApi } from '@/lib/utils'
 
 interface WriteDataProps {
