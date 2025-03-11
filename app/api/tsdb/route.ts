@@ -78,8 +78,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: 'BFF: Invalid operation' }, { status: 400 })
     }
   } catch (error) {
-    console.error('Error in API route:', error)
-    return NextResponse.json({ success: false, message: 'An error occurred' }, { status: 500 })
+    console.error('Error in API route:', req.body)
+    console.error(error)
+    return NextResponse.json({ success: false, message: 'An error occurred', debug: error }, { status: 500 })
   }
 }
 
