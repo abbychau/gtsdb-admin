@@ -5,19 +5,19 @@ import { Button } from '@/components/ui/button'
 
 interface TreeNodeProps {
   name: string
-  children: Array<{ key: string; count: number }>
+  items: Array<{ key: string; count: number }>
   selectedKey: string | null
   onSelectKey: (key: string) => void
   count?: number
 }
 
-function TreeNode({ name, children, selectedKey, onSelectKey, count }: TreeNodeProps) {
+function TreeNode({ name, items, selectedKey, onSelectKey, count }: TreeNodeProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
     <div>
       <div className="flex items-center">
-        {children.length > 0 ? (
+        {items.length > 0 ? (
           <Button
             variant="ghost"
             size="sm"
@@ -34,7 +34,7 @@ function TreeNode({ name, children, selectedKey, onSelectKey, count }: TreeNodeP
             selectedKey === name && "bg-accent"
           )}
           onClick={() => {
-            if (children.length > 0) {
+            if (items.length > 0) {
               setIsOpen(!isOpen)
             } else {
               onSelectKey(name)
@@ -49,9 +49,9 @@ function TreeNode({ name, children, selectedKey, onSelectKey, count }: TreeNodeP
           )}
         </button>
       </div>
-      {isOpen && children.length > 0 && (
+      {isOpen && items.length > 0 && (
         <div className="items-center">
-          {children.map((item) => (
+          {items.map((item) => (
             <div className="flex items-center ml-5" key={`${name}_${item.key}`}>
               <Database className="h-4 w-4 mr-2" />
               <button
@@ -100,7 +100,7 @@ export function TreeView({ items, selectedKey, onSelectKey }: TreeViewProps) {
         <TreeNode
           key={prefix}
           name={prefix}
-          children={children}
+          items={children}
           selectedKey={selectedKey}
           onSelectKey={onSelectKey}
           count={children.length === 0 ? items.find(item => item.key === prefix)?.count : undefined}
