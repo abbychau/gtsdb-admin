@@ -245,6 +245,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       case '1day':
         setDownsampling('86400')
         break
+      case '1week':
+        setDownsampling('604800')
+        break
       case 'clear':
         setDownsampling('')
         break
@@ -410,7 +413,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1hr')}>-1 hr</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1day')}>-1 day</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1week')}>-1 week</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', 'clear')}>Clear</Button>
+              <Button type="button" size="sm" onClick={() => setTimeOption('start', 'clear')}>Clear/All</Button>
             </div>
           </div>
           <div>
@@ -426,7 +429,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1hr')}>-1 hr</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1day')}>-1 day</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1week')}>-1 week</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', 'clear')}>Clear</Button>
+              <Button type="button" size="sm" onClick={() => setTimeOption('end', 'clear')}>Clear/All</Button>
             </div>
           </div>
           <div>
@@ -441,6 +444,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('5min')}>5 min</Button>
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('1hr')}>1 hr</Button>
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('1day')}>1 day</Button>
+              <Button type="button" size="sm" onClick={() => setDownsamplingOption('1week')}>1 week</Button>
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('clear')}>Clear</Button>
             </div>
           </div>
@@ -451,12 +455,13 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
                 type="number"
                 value={lastX}
                 onChange={(e) => setLastX(e.target.value)}
-                placeholder="Last X Records"
+                placeholder="Last X Records (Will override downsampling)"
               />
               <Button type="button" size="sm" onClick={() => setLastXOption('20')}>10</Button>
               <Button type="button" size="sm" onClick={() => setLastXOption('100')}>100</Button>
               <Button type="button" size="sm" onClick={() => setLastXOption('500')}>500</Button>
               <Button type="button" size="sm" onClick={() => setLastXOption('1000')}>1000</Button>
+              <Button type="button" size="sm" onClick={() => setLastXOption('10000')}>10000</Button>
               <Button type="button" size="sm" onClick={() => setLastXOption('clear')}>Clear</Button>
             </div>
           </div>
