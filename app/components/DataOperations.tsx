@@ -24,6 +24,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [downsampling, setDownsampling] = useState('')
+  const [aggregationMethod, setAggregationMethod] = useState('avg')
   const [lastX, setLastX] = useState('')
   const [result, setResult] = useState<any>(null)
   const [writeValue, setWriteValue] = useState('')
@@ -70,7 +71,8 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       start_timestamp: startTime ? parseInt(startTime) : undefined,
       end_timestamp: endTime ? parseInt(endTime) : undefined,
       downsampling: downsampling ? parseInt(downsampling) : undefined,
-      lastx: lastX ? parseInt(lastX) : undefined
+      lastx: lastX ? parseInt(lastX) : undefined,
+      aggregation: downsampling ? aggregationMethod : undefined
     };
     // check if it is empty
     const isEmpty = Object.keys(readPayload).length === 0 && readPayload.constructor === Object;
@@ -265,6 +267,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
   }
 
+  const setAggregationOption = (option: string) => {
+    setAggregationMethod(option);
+  }
+
   const [isSubscribed, setIsSubscribed] = useState(false)
 
   useEffect(() => {
@@ -448,6 +454,63 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('clear')}>Clear</Button>
             </div>
           </div>
+
+          {downsampling && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Aggregation Method</label>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'avg' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('avg')}
+                >
+                  Average
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'sum' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('sum')}
+                >
+                  Sum
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'min' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('min')}
+                >
+                  Min
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'max' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('max')}
+                >
+                  Max
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'first' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('first')}
+                >
+                  First
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'last' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('last')}
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Last X Records</label>
             <div className="flex items-center space-x-2">

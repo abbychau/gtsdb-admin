@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-
+import { createClient } from 'redis';
+const redis = await createClient().connect();
 async function fetchFromAPI(body: any, apiUrl: string) {
   try {
     const response = await fetch(apiUrl, {
@@ -28,6 +29,45 @@ export async function POST(req: Request) {
     body = typeof body === 'string' ? JSON.parse(body) : body
 
     switch (body.operation) {
+      case 'getapiurlconfig': {
+        const configString = await redis.get(apiUrl);
+
+        if (!configString) {
+          //return {}
+          return NextResponse.json({ success: true, data: {} })
+        }
+
+        const config = JSON.parse(configString)
+        
+        /* format of config: (WARNING, it is NOT the default value,
+        let client to decide the default value, this is just an example
+        of what the config object might look like.
+        return {} if no config is found in redis, 
+        then the client should not multiply the values by anything,
+        and do not append any units to the values.
+
+        )
+        {
+          "multipliers": {
+            "<name1>": 1,
+            "<name2>": 1.23456,
+            ...
+          },
+          "units": {
+            "...": "°C",
+            "...": "%",
+          },
+          ...
+        }
+          default: {} (empty object)
+        */
+        return NextResponse.json({ success: true, data: config })
+      }
+      case 'setapiurlconfig': {
+        await redis.set(apiUrl, body.config);
+
+        return NextResponse.json({ success: true })
+      }
       case 'subscribe': {
         const encoder = new TextEncoder()
         const stream = new TransformStream()
