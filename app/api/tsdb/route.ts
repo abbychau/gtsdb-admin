@@ -23,7 +23,12 @@ async function fetchFromAPI(body: any, apiUrl: string) {
 export async function POST(req: Request) {
   try {
     let body = await req.json()
-    const apiUrl = req.headers.get('x-api-url') || 'http://gtsdb-web.abby.md'
+    
+    // Get apiUrl from query parameter or header as fallback, or use default
+    const url = new URL(req.url)
+    const apiUrlFromQuery = url.searchParams.get('apiUrl')
+    const apiUrl = apiUrlFromQuery || req.headers.get('x-api-url') || 'http://gtsdb-web.abby.md'
+    
     console.log('Server side: API URL:', apiUrl)
     console.log('Server side: Request body:', body)
     body = typeof body === 'string' ? JSON.parse(body) : body
@@ -64,9 +69,28 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, data: config })
       }
       case 'setapiurlconfig': {
-        await redis.set(apiUrl, body.config);
-
-        return NextResponse.json({ success: true })
+        try {
+          // Validate that body.config is an object
+          if (!body.config || typeof body.config !== 'object') {
+            return NextResponse.json({ 
+              success: false, 
+              message: 'Invalid configuration format. Expected an object.'
+            }, { status: 400 });
+          }
+          
+          // Store the config in Redis
+          const configToStore = JSON.stringify(body.config);
+          await redis.set(apiUrl, configToStore);
+          
+          return NextResponse.json({ success: true, message: 'Configuration saved successfully' });
+        } catch (error) {
+          console.error('Error saving configuration:', error);
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Failed to save configuration',
+            debug: error
+          }, { status: 500 });
+        }
       }
       case 'subscribe': {
         const encoder = new TextEncoder()

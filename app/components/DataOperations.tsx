@@ -11,6 +11,7 @@ import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
 import { useSettings } from '@/settings-context'
+import { useConfig } from '@/config-context'
 import { copyToClipboard, fetchApi } from '@/lib/utils'
 
 interface DataOperationsProps {
@@ -39,6 +40,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const chartInstance = useRef<echarts.ECharts | null>(null)
   // Load settings
   const { settings } = useSettings();
+  const { getMultiplier, getUnit } = useConfig();
   
   useEffect(() => {
     return () => {
@@ -109,18 +111,27 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           const timestamps = data.data.data.map((item: any) => 
             new Date(item.timestamp * 1000).toLocaleString()
           )
-          const values = data.data.data.map((item: any) => item.value)
+          
+          // Apply multiplier to values
+          const multiplier = getMultiplier(selectedKey);
+          const unit = getUnit(selectedKey);
+          const values = data.data.data.map((item: any) => item.value * multiplier);
           
           const option = {
             tooltip: {
               trigger: 'axis',
+              formatter: function(params: any) {
+                const timestamp = params[0].name;
+                const value = params[0].value;
+                return `${timestamp}<br/>${selectedKey}: ${value.toFixed(4)}${unit}`;
+              },
               position: function (pt: any) {
                 return [pt[0], '10%']
               }
             },
             title: {
               left: 'center',
-              text: `${selectedKey} Data Visualization`
+              text: `${selectedKey} Data Visualization${unit ? ` (${unit})` : ''}`
             },
             toolbox: {
               feature: {
@@ -138,7 +149,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             },
             yAxis: {
               type: 'value',
-              boundaryGap: [0, '100%']
+              boundaryGap: [0, '100%'],
+              axisLabel: {
+                formatter: `{value}${unit}`
+              }
             },
             dataZoom: [
               {
@@ -587,6 +601,24 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <pre className="p-2 bg-gray-100 rounded overflow-x-auto overflow-y-auto w-full max-h-[200px]">
                 {JSON.stringify(result, null, 2)}
               </pre>
+              {result.data && result.data.length > 0 && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                  <p className="text-sm text-green-800">
+                    <span className="font-bold">Latest Value:</span> {(result.data[result.data.length - 1].value * getMultiplier(selectedKey)).toFixed(4)}{getUnit(selectedKey)}
+                  </p>
+                </div>
+              )}
+              {/* show multiplier and unit */}
+              {result.data && result.data.length > 0 && (
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-bold">Multiplier:</span> {getMultiplier(selectedKey)}
+                    <span className="font-bold ml-3">Unit:</span> {getUnit(selectedKey)!=''? getUnit(selectedKey) : '<none>'}
+                    <span className="font-bold ml-3">Key:</span> {selectedKey}
+                                        
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

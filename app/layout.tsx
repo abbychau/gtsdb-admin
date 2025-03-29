@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import favicon from "../public/favicon.png";
 import { SettingsProvider } from './settings-context'
+import { ConfigProvider } from './config-context'
 
 
 export const metadata: Metadata = {
@@ -23,7 +24,9 @@ export default function RootLayout({
         className={`antialiased`}
       >
         <SettingsProvider>
+        <ConfigProvider>
           {children}
+        </ConfigProvider>
         </SettingsProvider>
       </body>
     </html>
