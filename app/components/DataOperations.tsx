@@ -287,13 +287,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
 
   const [isSubscribed, setIsSubscribed] = useState(false)
 
-  useEffect(() => {
-    return () => {
-      if (isSubscribed) {
-        handleUnsubscribe()
-      }
-    }
-  }, [isSubscribed])
 
   const handleSubscribe = async () => {
     toast({

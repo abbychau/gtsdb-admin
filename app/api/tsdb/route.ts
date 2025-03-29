@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from 'redis';
-const redis = await createClient().connect();
+const redis = await createClient({ url: process.env.REDIS_URL }).connect();
 async function fetchFromAPI(body: any, apiUrl: string) {
   try {
     const response = await fetch(apiUrl, {
