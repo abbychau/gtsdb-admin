@@ -7,6 +7,7 @@ interface ConfigData {
   multipliers: { [key: string]: number };
   units: { [key: string]: string };
   offsets: { [key: string]: number };
+  hints: { [key: string]: string };
 }
 
 interface ConfigContextType {
@@ -15,12 +16,14 @@ interface ConfigContextType {
   getMultiplier: (key: string) => number;
   getUnit: (key: string) => string;
   getOffset: (key: string) => number;
+  getHint: (key: string) => string;
 }
 
 const defaultConfig: ConfigData = {
   multipliers: {},
   units: {},
-  offsets: {}
+  offsets: {},
+  hints: {}
 };
 
 const ConfigContext = createContext<ConfigContextType>({
@@ -29,6 +32,7 @@ const ConfigContext = createContext<ConfigContextType>({
   getMultiplier: () => 1,
   getUnit: () => '',
   getOffset: () => 0,
+  getHint: () => '',
 });
 
 export function ConfigProvider({ children }: { children: ReactNode }) {
@@ -125,8 +129,29 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     return 0;
   };
 
+  const getHint = (key: string): string => {
+    // First check if there's an exact match
+    if (config.hints && config.hints[key] !== undefined) {
+      return config.hints[key];
+    }
+
+    // Check if there's a match with a wildcard (e.g., "*name*" or "name*" or "*name")
+    if (config.hints) {
+      const wildcardMatch = Object.keys(config.hints).find((k) => {
+        const regex = new RegExp(k.replace(/\*/g, '.*'));
+        return regex.test(key);
+      });
+      if (wildcardMatch) {
+        return config.hints[wildcardMatch];
+      }
+    }
+    
+    // Otherwise return empty string (no hint)
+    return '';
+  };
+
   return (
-    <ConfigContext.Provider value={{ config, updateConfig, getMultiplier, getUnit, getOffset }}>
+    <ConfigContext.Provider value={{ config, updateConfig, getMultiplier, getUnit, getOffset, getHint }}>
       {children}
     </ConfigContext.Provider>
   );

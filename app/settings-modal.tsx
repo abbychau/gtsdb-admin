@@ -139,7 +139,7 @@ function ConfigureModal({ isOpen, onClose, apiUrl, onSave }: ConfigureModalProps
         <DialogHeader>
           <DialogTitle>Configure Endpoint Multipliers and Units</DialogTitle>
           <DialogDescription>
-            Configure your GTSDB API connection including multipliers, units, and offsets
+            Configure your GTSDB API connection including multipliers, units, offsets, and hints
           </DialogDescription>
         </DialogHeader>
         <div className="py-6 space-y-6">
@@ -160,7 +160,7 @@ function ConfigureModal({ isOpen, onClose, apiUrl, onSave }: ConfigureModalProps
               />
             )}
             <p className="text-sm text-muted-foreground">
-              Enter configuration in JSON format for multipliers, units, and offsets
+              Enter configuration in JSON format for multipliers, units, offsets, and hints
             </p>
           </div>
 

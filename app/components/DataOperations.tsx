@@ -40,7 +40,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const chartInstance = useRef<echarts.ECharts | null>(null)
   // Load settings
   const { settings } = useSettings();
-  const { getMultiplier, getUnit, getOffset } = useConfig();
+  const { getMultiplier, getUnit, getOffset, getHint } = useConfig();
   
   useEffect(() => {
     return () => {
@@ -610,6 +610,14 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
                     <span className="font-bold ml-3">Offset:</span> {getOffset(selectedKey)}
                     <span className="font-bold ml-3">Unit:</span> {getUnit(selectedKey)!=''? getUnit(selectedKey) : '<none>'}
                     <span className="font-bold ml-3">Key:</span> {selectedKey}
+                  </p>
+                </div>
+              )}
+              {/* Show hint if available */}
+              {getHint(selectedKey) && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded">
+                  <p className="text-sm text-amber-800">
+                    <span className="font-bold">Hint:</span> {getHint(selectedKey)}
                   </p>
                 </div>
               )}
