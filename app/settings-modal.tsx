@@ -139,11 +139,11 @@ function ConfigureModal({ isOpen, onClose, apiUrl, onSave }: ConfigureModalProps
         <DialogHeader>
           <DialogTitle>Configure Endpoint Multipliers and Units</DialogTitle>
           <DialogDescription>
-            Configure your GTSDB API connection
+            Configure your GTSDB API connection including multipliers, units, and offsets
           </DialogDescription>
         </DialogHeader>
         <div className="py-6 space-y-6">
-            <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="configApiUrl">Configure Json</Label>
             {isLoading ? (
               <div className="flex items-center justify-center h-[300px] border rounded-md">
@@ -160,9 +160,9 @@ function ConfigureModal({ isOpen, onClose, apiUrl, onSave }: ConfigureModalProps
               />
             )}
             <p className="text-sm text-muted-foreground">
-              Enter configuration in JSON format for multipliers and units
+              Enter configuration in JSON format for multipliers, units, and offsets
             </p>
-            </div>
+          </div>
 
           <div className="flex justify-between">
             <Button 

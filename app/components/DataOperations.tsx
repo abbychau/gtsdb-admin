@@ -40,7 +40,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const chartInstance = useRef<echarts.ECharts | null>(null)
   // Load settings
   const { settings } = useSettings();
-  const { getMultiplier, getUnit } = useConfig();
+  const { getMultiplier, getUnit, getOffset } = useConfig();
   
   useEffect(() => {
     return () => {
@@ -112,10 +112,11 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             new Date(item.timestamp * 1000).toLocaleString()
           )
           
-          // Apply multiplier to values
+          // Apply multiplier and offset to values
           const multiplier = getMultiplier(selectedKey);
           const unit = getUnit(selectedKey);
-          const values = data.data.data.map((item: any) => item.value * multiplier);
+          const offset = getOffset(selectedKey);
+          const values = data.data.data.map((item: any) => (item.value * multiplier) + offset);
           
           const option = {
             tooltip: {
@@ -597,18 +598,18 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               {result.data && result.data.length > 0 && (
                 <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
                   <p className="text-sm text-green-800">
-                    <span className="font-bold">Latest Value:</span> {(result.data[result.data.length - 1].value * getMultiplier(selectedKey)).toFixed(4)}{getUnit(selectedKey)}
+                    <span className="font-bold">Latest Value:</span> {((result.data[result.data.length - 1].value * getMultiplier(selectedKey)) + getOffset(selectedKey)).toFixed(4)}{getUnit(selectedKey)}
                   </p>
                 </div>
               )}
-              {/* show multiplier and unit */}
+              {/* show multiplier, offset and unit */}
               {result.data && result.data.length > 0 && (
                 <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
                   <p className="text-sm text-blue-800">
                     <span className="font-bold">Multiplier:</span> {getMultiplier(selectedKey)}
+                    <span className="font-bold ml-3">Offset:</span> {getOffset(selectedKey)}
                     <span className="font-bold ml-3">Unit:</span> {getUnit(selectedKey)!=''? getUnit(selectedKey) : '<none>'}
                     <span className="font-bold ml-3">Key:</span> {selectedKey}
-                                        
                   </p>
                 </div>
               )}

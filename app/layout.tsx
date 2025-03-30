@@ -4,7 +4,6 @@ import favicon from "../public/favicon.png";
 import { SettingsProvider } from './settings-context'
 import { ConfigProvider } from './config-context'
 
-
 export const metadata: Metadata = {
   title: "GTSDB Admin",
   description: "GTSDB ADMIN is a modern REST client for developers. by Abby",
