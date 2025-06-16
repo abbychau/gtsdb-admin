@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from 'redis';
+
+// Add CORS headers to all responses
+function corsResponse(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-url')
+  return response
+}
+
 const redis = await createClient({ url: process.env.REDIS_URL }).connect();
 async function fetchFromAPI(body: any, apiUrl: string) {
   try {
@@ -20,6 +29,11 @@ async function fetchFromAPI(body: any, apiUrl: string) {
   }
 }
 
+// Add OPTIONS handler for preflight requests
+export async function OPTIONS(req: Request) {
+  return corsResponse(NextResponse.json({}, { status: 200 }))
+}
+
 export async function POST(req: Request) {
   try {
     let body = await req.json()
@@ -38,8 +52,7 @@ export async function POST(req: Request) {
         const configString = await redis.get(apiUrl);
 
         if (!configString) {
-          //return {}
-          return NextResponse.json({ success: true, data: {} })
+          return corsResponse(NextResponse.json({ success: true, data: {} }))
         }
 
         const config = JSON.parse(configString)
@@ -66,7 +79,7 @@ export async function POST(req: Request) {
         }
           default: {} (empty object)
         */
-        return NextResponse.json({ success: true, data: config })
+        return corsResponse(NextResponse.json({ success: true, data: config }))
       }
       case 'setapiurlconfig': {
         try {
@@ -147,4 +160,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'An error occurred', debug: error }, { status: 500 })
   }
 }
+
 
