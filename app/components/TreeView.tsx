@@ -29,10 +29,7 @@ function TreeNode({ name, items, selectedKey, onSelectKey, count }: TreeNodeProp
         ) : <Database className="h-4 w-4 mr-2" />}
         
         <button
-          className={cn(
-            "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent  relative pr-12",
-            selectedKey === name && "bg-accent"
-          )}
+          className="flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent relative pr-12"
           onClick={() => {
             if (items.length > 0) {
               setIsOpen(!isOpen)
@@ -55,10 +52,7 @@ function TreeNode({ name, items, selectedKey, onSelectKey, count }: TreeNodeProp
             <div className="flex items-center ml-5" key={`${name}_${item.key}`}>
               <Database className="h-4 w-4 mr-2" />
               <button
-                className={cn(
-                  "flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent relative pr-12",
-                  selectedKey === `${name}_${item.key}` && "bg-accent"
-                )}
+                className="flex-grow text-left px-2 py-1 rounded text-sm hover:bg-accent relative pr-12"
                 onClick={() => onSelectKey(`${name}_${item.key}`)}
               >
                 <span className="truncate">{item.key}</span>

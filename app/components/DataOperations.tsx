@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Database, Copy } from 'lucide-react'
+import { Loader2, Database, Copy, Code } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
@@ -41,6 +41,35 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   // Load settings
   const { settings } = useSettings();
   const { getMultiplier, getUnit, getOffset, getHint } = useConfig();
+
+  const generateIframeCode = () => {
+    const baseUrl = window.location.origin
+    const params = new URLSearchParams({
+      key: selectedKey,
+      apiUrl: settings.apiUrl
+    })
+
+    // Add query parameters if they exist
+    if (startTime) params.set('start', startTime)
+    if (endTime) params.set('end', endTime)
+    if (downsampling) params.set('downsampling', downsampling)
+    if (aggregationMethod && downsampling) params.set('aggregation', aggregationMethod)
+    if (lastX) params.set('lastx', lastX)
+
+    const embedUrl = `${baseUrl}/embed?${params.toString()}`
+    const iframeCode = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>`
+    
+    return { embedUrl, iframeCode }
+  }
+
+  const copyIframeCode = () => {
+    const { iframeCode } = generateIframeCode()
+    copyToClipboard(iframeCode)
+    toast({
+      title: "Success",
+      description: "Iframe code copied to clipboard!",
+    })
+  }
   
   useEffect(() => {
     return () => {
@@ -49,11 +78,76 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       }
     }
   }, [])
+
   const handleResize = () => {
     if (chartInstance.current) {
       chartInstance.current.resize()
     }
   }
+
+  // Set up resize observer and visibility change handling
+  useEffect(() => {
+    let resizeObserver: ResizeObserver | null = null
+    let intervalId: NodeJS.Timeout | null = null
+
+    // Handle iframe visibility changes (when tabs switch)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && chartInstance.current) {
+        // Small delay to ensure iframe is fully visible
+        setTimeout(() => {
+          if (chartInstance.current) {
+            chartInstance.current.resize()
+          }
+        }, 100)
+      }
+    }
+
+    // Listen for tab activation messages from parent
+    const handleTabActivation = (event: MessageEvent) => {
+      if (event.data.type === 'tabActivated' && chartInstance.current) {
+        // Resize chart when tab becomes active
+        setTimeout(() => {
+          if (chartInstance.current) {
+            chartInstance.current.resize()
+          }
+        }, 50)
+      }
+    }
+
+    const setupResize = () => {
+      // Resize when window is resized
+      window.addEventListener('resize', handleResize)
+      
+      // Use ResizeObserver for chart container
+      if (chartRef.current && 'ResizeObserver' in window) {
+        resizeObserver = new ResizeObserver(() => {
+          handleResize()
+        })
+        resizeObserver.observe(chartRef.current)
+      }
+
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+      window.addEventListener('message', handleTabActivation)
+
+      // Periodic resize for iframe context (reduced frequency)
+      intervalId = setInterval(handleResize, 3000)
+    }
+
+    setupResize()
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('message', handleTabActivation)
+    }
+  }, [])
+
   // Clear data when key changes
   useEffect(() => {
     setResult(null)
@@ -62,8 +156,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       chartInstance.current = null
     }
   }, [selectedKey])
-
-  setInterval(handleResize, 1000)
 
   const handleReadAndPlot = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -627,7 +719,25 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         
         {settings.showVisualization && (
           <Card className='mt-4 shadow-none'>
-            <div ref={chartRef} style={{ width: '100%', height: '400px' }} />
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">Data Visualization</CardTitle>
+                {result && result.data && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyIframeCode}
+                    className="flex items-center gap-2"
+                  >
+                    <Code className="h-4 w-4" />
+                    Copy Embed Code
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div ref={chartRef} style={{ width: '100%', height: '400px' }} />
+            </CardContent>
           </Card>
         )}
         <Separator className="my-4" />
