@@ -71,9 +71,12 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
 
   const getMultiplier = (key: string): number => {
     
-    console.log(config.multipliers, key)
+    //if config has no member
+    if (!config.multipliers) return 1;
+
     // First check if there's an exact match
     if (config.multipliers[key] !== undefined) {
+      console.log('Exact match found for key:', key, 'with multiplier:', config.multipliers[key]);
       return config.multipliers[key];
     }
 
@@ -83,6 +86,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       return regex.test(key);
     });
     if (wildcardMatch) {
+      console.log('Wildcard match found for key:', key, 'with pattern:', wildcardMatch, 'and multiplier:', config.multipliers[wildcardMatch]);
       return config.multipliers[wildcardMatch];
     }
     // Otherwise return 1 (no multiplier)
@@ -90,6 +94,10 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
   };
 
   const getUnit = (key: string): string => {
+
+    //if config has no member
+    if (!config.units) return '';
+
     // First check if there's an exact match
     if (config.units[key] !== undefined) {
       return config.units[key];
