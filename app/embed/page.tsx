@@ -65,7 +65,9 @@ function EmbedContent() {
           if (config.multipliers) {
             const wildcardMatch = Object.keys(config.multipliers).find((k) => {
               const regex = new RegExp(k.replace(/\*/g, '.*'))
-              return regex.test(key)
+              const isMatch = regex.test(key)
+              console.log(`Wildcard match for ${key}: ${isMatch}`)
+              return isMatch
             })
             if (wildcardMatch) {
               return config.multipliers[wildcardMatch]
