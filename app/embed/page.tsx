@@ -60,16 +60,17 @@ function EmbedContent() {
         // Helper functions for config
         const getMultiplier = (key: string): number => {
           if (config.multipliers && config.multipliers[key] !== undefined) {
+            console.log(`Exact match for ${key}: ${config.multipliers[key]}`)
             return config.multipliers[key]
           }
           if (config.multipliers) {
             const wildcardMatch = Object.keys(config.multipliers).find((k) => {
               const regex = new RegExp(k.replace(/\*/g, '.*'))
               const isMatch = regex.test(key)
-              console.log(`Wildcard match for ${key}: ${isMatch}`)
               return isMatch
             })
             if (wildcardMatch) {
+              console.log(`Wildcard match for ${key}: ${config.multipliers[wildcardMatch]}`)
               return config.multipliers[wildcardMatch]
             }
           }
