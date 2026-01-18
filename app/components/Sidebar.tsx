@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, ServerIcon, RefreshCw } from 'lucide-react'
+import { Plus, ServerIcon, RefreshCw, BarChart3 } from 'lucide-react'
 import { TreeView } from './TreeView'
 import { ServerInfo } from './ServerInfo'
 import {
@@ -17,9 +17,10 @@ interface SidebarProps {
   onSelectKey: (key: string) => void
   onInitKey: () => void
   onRefreshKeys: () => void
+  onOpenComparisonTool?: () => void
 }
 
-export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys }: SidebarProps) {
+export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys, onOpenComparisonTool }: SidebarProps) {
   const [filter, setFilter] = useState('')
   const filteredKeys = keys?.filter(key => 
     key.key.toLowerCase().includes(filter.toLowerCase())
@@ -56,11 +57,20 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onR
       <CardContent className="flex-1 overflow-y-auto">
         <Button
           onClick={onInitKey}
-          className="w-full mb-4"
+          className="w-full mb-2"
           variant="outline"
         >
           <Plus className="mr-2 h-4 w-4" /> Add Key
         </Button>
+        {onOpenComparisonTool && (
+          <Button
+            onClick={onOpenComparisonTool}
+            className="w-full mb-4"
+            variant="outline"
+          >
+            <BarChart3 className="mr-2 h-4 w-4" /> Comparison Tool
+          </Button>
+        )}
         <Input
           placeholder="Filter keys..."
           value={filter}

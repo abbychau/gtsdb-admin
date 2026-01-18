@@ -9,6 +9,7 @@ interface Tab {
   id: string
   title: string
   keyName: string
+  isComparisonTool?: boolean
 }
 
 function formatTabTitle(keyName: string) {
@@ -60,7 +61,15 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
       <div className="flex border-b bg-background">
         <div className="flex overflow-x-auto">
           {tabs.map((tab) => {
-            const { folder, key } = formatTabTitle(tab.keyName)
+            let displayTitle = tab.title
+            let folder = ''
+            
+            if (!tab.isComparisonTool) {
+              const { folder: f, key } = formatTabTitle(tab.keyName)
+              folder = f
+              displayTitle = key
+            }
+            
             return (
               <div
                 key={tab.id}
@@ -78,8 +87,8 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
                       {folder}
                     </div>
                   )}
-                  <div className="truncate max-w-24 font-medium" title={key}>
-                    {key}
+                  <div className="truncate max-w-24 font-medium" title={displayTitle}>
+                    {displayTitle}
                   </div>
                 </div>
                 <Button
@@ -109,12 +118,21 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
               activeTabId === tab.id ? "block" : "hidden"
             )}
           >
-            <iframe
-              src={`/tab?key=${encodeURIComponent(tab.keyName)}`}
-              className="w-full h-full border-0"
-              title={`Data operations for ${tab.title}`}
-              data-tab-id={tab.id}
-            />
+            {tab.isComparisonTool ? (
+              <iframe
+                src="/comparison"
+                className="w-full h-full border-0"
+                title="Comparison Tool"
+                data-tab-id={tab.id}
+              />
+            ) : (
+              <iframe
+                src={`/tab?key=${encodeURIComponent(tab.keyName)}`}
+                className="w-full h-full border-0"
+                title={`Data operations for ${tab.title}`}
+                data-tab-id={tab.id}
+              />
+            )}
           </div>
         ))}
       </div>

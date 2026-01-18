@@ -3,6 +3,7 @@ import "./globals.css";
 import favicon from "../public/favicon.png";
 import { SettingsProvider } from './settings-context'
 import { ConfigProvider } from './config-context'
+import { ComparisonProvider } from './comparison-context'
 
 export const metadata: Metadata = {
   title: "GTSDB Admin",
@@ -24,7 +25,9 @@ export default function RootLayout({
       >
         <SettingsProvider>
         <ConfigProvider>
+        <ComparisonProvider>
           {children}
+        </ComparisonProvider>
         </ConfigProvider>
         </SettingsProvider>
       </body>

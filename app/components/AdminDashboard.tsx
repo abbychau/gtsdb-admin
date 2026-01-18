@@ -11,6 +11,7 @@ interface Tab {
   id: string
   title: string
   keyName: string
+  isComparisonTool?: boolean
 }
 
 interface AdminDashboardProps {
@@ -96,6 +97,26 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
     setActiveTabId(newTab.id)
   }
 
+  const openComparisonTool = () => {
+    // Check if comparison tool tab already exists
+    const existingTab = tabs.find(tab => tab.isComparisonTool)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return
+    }
+
+    // Create comparison tool tab
+    const newTab: Tab = {
+      id: 'comparison-tool',
+      title: 'Comparison Tool',
+      keyName: 'comparison-tool',
+      isComparisonTool: true
+    }
+
+    setTabs(prevTabs => [...prevTabs, newTab])
+    setActiveTabId(newTab.id)
+  }
+
   const closeTab = (tabId: string) => {
     setTabs(prevTabs => {
       const newTabs = prevTabs.filter(tab => tab.id !== tabId)
@@ -141,6 +162,7 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
         onSelectKey={createTab}
         onInitKey={() => setIsInitKeyModalOpen(true)}
         onRefreshKeys={fetchKeys}
+        onOpenComparisonTool={openComparisonTool}
       />
       <div className="flex-1 flex flex-col">
         <div className="flex-1">

@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Database, Copy, Code } from 'lucide-react'
+import { Loader2, Database, Copy, Code, BarChart3 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
 import { useSettings } from '@/settings-context'
 import { useConfig } from '@/config-context'
+import { useComparison } from '@/comparison-context'
 import { copyToClipboard, fetchApi } from '@/lib/utils'
 
 interface DataOperationsProps {
@@ -41,6 +42,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   // Load settings
   const { settings } = useSettings();
   const { getMultiplier, getUnit, getOffset, getHint } = useConfig();
+  const { addChart } = useComparison();
 
   const generateIframeCode = () => {
     const baseUrl = window.location.origin
@@ -68,6 +70,37 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     toast({
       title: "Success",
       description: "Iframe code copied to clipboard!",
+    })
+  }
+
+  const sendToComparisonTool = () => {
+    if (!result || !result.data) {
+      toast({
+        title: "Error",
+        description: "No data to send to comparison tool",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const readPayload = requestPayload?.Read || {}
+    
+    addChart({
+      keyName: selectedKey,
+      title: `${selectedKey} (${new Date().toLocaleTimeString()})`,
+      data: result.data,
+      requestParams: {
+        start_timestamp: readPayload.start_timestamp,
+        end_timestamp: readPayload.end_timestamp,
+        downsampling: readPayload.downsampling,
+        lastx: readPayload.lastx,
+        aggregation: readPayload.aggregation
+      }
+    })
+
+    toast({
+      title: "Success",
+      description: "Visualization added to comparison tool!",
     })
   }
   
@@ -723,15 +756,26 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <div className="flex justify-between items-center">
                 <CardTitle className="text-lg">Data Visualization</CardTitle>
                 {result && result.data && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyIframeCode}
-                    className="flex items-center gap-2"
-                  >
-                    <Code className="h-4 w-4" />
-                    Copy Embed Code
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={sendToComparisonTool}
+                      className="flex items-center gap-2"
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      Send to Comparison Tool
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyIframeCode}
+                      className="flex items-center gap-2"
+                    >
+                      <Code className="h-4 w-4" />
+                      Copy Embed Code
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardHeader>
