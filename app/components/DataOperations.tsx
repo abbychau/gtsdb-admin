@@ -30,8 +30,15 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [lastX, setLastX] = useState('')
   const [result, setResult] = useState<any>(null)
   const [writeValue, setWriteValue] = useState('')
+  const [patchCsvData, setPatchCsvData] = useState('')
+  const [deleteValueOperator, setDeleteValueOperator] = useState<'>' | '<'>('>')
+  const [deleteValueThreshold, setDeleteValueThreshold] = useState('')
+  const [timestampFrom, setTimestampFrom] = useState('')
+  const [timestampTo, setTimestampTo] = useState('')
   const [isReading, setIsReading] = useState(false)
   const [isWriting, setIsWriting] = useState(false)
+  const [isPatchingData, setIsPatchingData] = useState(false)
+  const [isDeletingByValue, setIsDeletingByValue] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState(selectedKey)
@@ -511,6 +518,95 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     });
   };
 
+  const handleDataPatch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsPatchingData(true)
+
+    const payload = {
+      operation: 'data-patch',
+      key: selectedKey,
+      data: patchCsvData
+    }
+    setRequestPayload(payload)
+
+    try {
+      const data = await fetchApi({ body: payload })
+      if (data.success) {
+        setResult(data.data)
+        setPatchCsvData('')
+        toast({
+          title: "Success",
+          description: data.data?.message || "Data patch completed.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to patch data.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to patch data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsPatchingData(false)
+    }
+  }
+
+  const handleDeleteDataPoint = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (deleteValueThreshold.trim() === '') {
+      toast({
+        title: "Error",
+        description: "Value threshold is required.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsDeletingByValue(true)
+
+    const payload = {
+      operation: 'deleteDataPoint',
+      key: selectedKey,
+      payload: {
+        operator: deleteValueOperator,
+        value: parseFloat(deleteValueThreshold),
+        timestampFrom: timestampFrom ? parseInt(timestampFrom) : undefined,
+        timestampTo: timestampTo ? parseInt(timestampTo) : undefined
+      }
+    }
+    setRequestPayload(payload)
+
+    try {
+      const data = await fetchApi({ body: payload })
+      if (data.success) {
+        setResult(data.data)
+        toast({
+          title: "Success",
+          description: data.data?.message || "deleteDataPoint completed.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to run deleteDataPoint.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to run deleteDataPoint. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeletingByValue(false)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -805,6 +901,74 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           </Button>
         </form>
         <Separator className="my-4" />
+        <form onSubmit={handleDataPatch} className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Data Patch (CSV: `timestamp,value` per line)</label>
+          <textarea
+            className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={patchCsvData}
+            onChange={(e) => setPatchCsvData(e.target.value)}
+            placeholder="1717965210,123.45&#10;1717965211,123.46"
+            required
+          />
+          <Button type="submit" disabled={isPatchingData}>
+            {isPatchingData ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Patching...
+              </>
+            ) : (
+              'Data Patch'
+            )}
+          </Button>
+        </form>
+        <Separator className="my-4" />
+        <form onSubmit={handleDeleteDataPoint} className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Delete data points by value?</label>
+          <div className="flex items-center space-x-2">
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={deleteValueOperator}
+              onChange={(e) => setDeleteValueOperator(e.target.value as '>' | '<')}
+            >
+              <option value=">">{'>'}</option>
+              <option value="<">{'<'}</option>
+            </select>
+            <Input
+              type="number"
+              step="any"
+              value={deleteValueThreshold}
+              onChange={(e) => setDeleteValueThreshold(e.target.value)}
+              placeholder="Threshold value"
+              required
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="number"
+              value={timestampFrom}
+              onChange={(e) => setTimestampFrom(e.target.value)}
+              placeholder="timestampFrom (optional)"
+            />
+            <Input
+              type="number"
+              value={timestampTo}
+              onChange={(e) => setTimestampTo(e.target.value)}
+              placeholder="timestampTo (optional)"
+            />
+            <Button type="submit" disabled={isDeletingByValue}>
+              {isDeletingByValue ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                'Delete Matching Data'
+                
+              )}
+            </Button>
+          </div>
+        </form>
+        <Separator className="my-4" />
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-gray-700">Subscription Status: {isSubscribed ? 'Subscribed' : 'Not Subscribed'}</span>
           <Button onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}>
@@ -848,4 +1012,3 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     </Card>
   )
 }
-

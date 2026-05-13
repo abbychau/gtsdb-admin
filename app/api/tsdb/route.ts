@@ -147,7 +147,9 @@ export async function POST(req: Request) {
       case 'deletekey':
       case 'renamekey':
       case 'multi-read':
-      case 'serverInfo': {
+      case 'serverInfo':
+      case 'data-patch':
+      case 'deleteDataPoint': {
         const data = await fetchFromAPI(body, apiUrl)
         return NextResponse.json({ success: true, data })
       }
@@ -160,5 +162,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'An error occurred', debug: error }, { status: 500 })
   }
 }
-
-
