@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Loader2, Database, Copy, Code, BarChart3 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
+import DataPatchTool from './DataPatchTool'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
 import { useSettings } from '@/settings-context'
@@ -30,14 +31,12 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [lastX, setLastX] = useState('')
   const [result, setResult] = useState<any>(null)
   const [writeValue, setWriteValue] = useState('')
-  const [patchCsvData, setPatchCsvData] = useState('')
   const [deleteValueOperator, setDeleteValueOperator] = useState<'>' | '<'>('>')
   const [deleteValueThreshold, setDeleteValueThreshold] = useState('')
   const [timestampFrom, setTimestampFrom] = useState('')
   const [timestampTo, setTimestampTo] = useState('')
   const [isReading, setIsReading] = useState(false)
   const [isWriting, setIsWriting] = useState(false)
-  const [isPatchingData, setIsPatchingData] = useState(false)
   const [isDeletingByValue, setIsDeletingByValue] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
@@ -523,44 +522,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     });
   };
 
-  const handleDataPatch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsPatchingData(true)
-
-    const payload = {
-      operation: 'data-patch',
-      key: selectedKey,
-      data: patchCsvData
-    }
-    setRequestPayload(payload)
-
-    try {
-      const data = await fetchApi({ body: payload })
-      if (data.success) {
-        setResult(data.data)
-        setPatchCsvData('')
-        toast({
-          title: "Success",
-          description: data.data?.message || "Data patch completed.",
-        })
-      } else {
-        toast({
-          title: "Error",
-          description: data.message || "Failed to patch data.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to patch data. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsPatchingData(false)
-    }
-  }
-
   const handleDeleteDataPoint = async (e: React.FormEvent) => {
     e.preventDefault()
     const hasValue = deleteValueThreshold.trim() !== ''
@@ -932,26 +893,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           </Button>
         </form>
         <Separator className="my-4" />
-        <form onSubmit={handleDataPatch} className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Data Patch (CSV: `timestamp,value` per line)</label>
-          <textarea
-            className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            value={patchCsvData}
-            onChange={(e) => setPatchCsvData(e.target.value)}
-            placeholder="1717965210,123.45&#10;1717965211,123.46"
-            required
-          />
-          <Button type="submit" disabled={isPatchingData}>
-            {isPatchingData ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Patching...
-              </>
-            ) : (
-              'Data Patch'
-            )}
-          </Button>
-        </form>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Data Patch (Add/Update Data Points)</label>
+          <DataPatchTool selectedKey={selectedKey} onPatchComplete={onWrite} />
+        </div>
         <Separator className="my-4" />
         <form onSubmit={handleDeleteDataPoint} className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Delete data points by value?</label>
