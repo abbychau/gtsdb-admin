@@ -373,6 +373,8 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       '-1hr': now - 3600,
       '-1day': now - 86400,
       '-1week': now - 604800,
+      '-1month': now - 2592000,
+      '+1month': now + 2592000,
       'clear': 0
     }
 
@@ -396,6 +398,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         break
       case '1week':
         setDownsampling('604800')
+        break
+      case '1month':
+        setDownsampling('2592000')
         break
       case 'clear':
         setDownsampling('')
@@ -558,10 +563,31 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
 
   const handleDeleteDataPoint = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (deleteValueThreshold.trim() === '') {
+    const hasValue = deleteValueThreshold.trim() !== ''
+    const hasTimestampFrom = timestampFrom.trim() !== ''
+    const hasTimestampTo = timestampTo.trim() !== ''
+    const hasTimeRange = hasTimestampFrom && hasTimestampTo
+
+    if (!hasValue && !hasTimeRange) {
       toast({
         title: "Error",
-        description: "Value threshold is required.",
+        description: "Please provide either a value threshold, or both timestampFrom and timestampTo.",
+        variant: "destructive",
+      })
+      return
+    }
+    if ((hasTimestampFrom && !hasTimestampTo) || (!hasTimestampFrom && hasTimestampTo)) {
+      toast({
+        title: "Error",
+        description: "timestampFrom and timestampTo must be provided together.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (hasTimeRange && parseInt(timestampFrom) > parseInt(timestampTo)) {
+      toast({
+        title: "Error",
+        description: "timestampFrom must be less than or equal to timestampTo.",
         variant: "destructive",
       })
       return
@@ -573,10 +599,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       operation: 'deleteDataPoint',
       key: selectedKey,
       payload: {
-        operator: deleteValueOperator,
-        value: parseFloat(deleteValueThreshold),
-        timestampFrom: timestampFrom ? parseInt(timestampFrom) : undefined,
-        timestampTo: timestampTo ? parseInt(timestampTo) : undefined
+        operator: hasValue ? deleteValueOperator : undefined,
+        value: hasValue ? parseFloat(deleteValueThreshold) : undefined,
+        timestampFrom: hasTimestampFrom ? parseInt(timestampFrom) : undefined,
+        timestampTo: hasTimestampTo ? parseInt(timestampTo) : undefined
       }
     }
     setRequestPayload(payload)
@@ -648,6 +674,8 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1hr')}>-1 hr</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1day')}>-1 day</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1week')}>-1 week</Button>
+              <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1month')}>-1 month</Button>
+              <Button type="button" size="sm" onClick={() => setTimeOption('start', '+1month')}>+1 month</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('start', 'clear')}>Clear/All</Button>
             </div>
           </div>
@@ -664,6 +692,8 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1hr')}>-1 hr</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1day')}>-1 day</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1week')}>-1 week</Button>
+              <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1month')}>-1 month</Button>
+              <Button type="button" size="sm" onClick={() => setTimeOption('end', '+1month')}>+1 month</Button>
               <Button type="button" size="sm" onClick={() => setTimeOption('end', 'clear')}>Clear/All</Button>
             </div>
           </div>
@@ -680,6 +710,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('1hr')}>1 hr</Button>
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('1day')}>1 day</Button>
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('1week')}>1 week</Button>
+              <Button type="button" size="sm" onClick={() => setDownsamplingOption('1month')}>1 month</Button>
               <Button type="button" size="sm" onClick={() => setDownsamplingOption('clear')}>Clear</Button>
             </div>
           </div>
@@ -939,7 +970,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               value={deleteValueThreshold}
               onChange={(e) => setDeleteValueThreshold(e.target.value)}
               placeholder="Threshold value"
-              required
             />
           </div>
           <div className="flex items-center space-x-2">
