@@ -89,7 +89,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
       return
     }
 
-    const readPayload = requestPayload?.Read || {}
+    const readPayload = requestPayload?.read || {}
     
     addChart({
       keyName: selectedKey,
@@ -212,7 +212,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     const payload = {
       operation: 'read',
       key: selectedKey,
-      Read: isEmpty ? undefined : readPayload
+      read: isEmpty ? undefined : readPayload
     }
     setRequestPayload(payload)
     try {
@@ -337,7 +337,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         body: {
           operation: 'write',
           key: selectedKey,
-          Write: { Value: parseFloat(writeValue) }
+          write: { value: parseFloat(writeValue) }
         }
       })
       if (data.success) {
@@ -423,17 +423,16 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   }
 
   const [isSubscribed, setIsSubscribed] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isCompacting, setIsCompacting] = useState(false)
+  const [isFlushing, setIsFlushing] = useState(false)
+  const [isReloading, setIsReloading] = useState(false)
+  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv')
 
 
   const handleSubscribe = async () => {
-    toast({
-      title: "Subscribing (Work in Progress)",
-      description: `Subscribing to ${selectedKey}...`,
-    })
-    return
     try {
       const data = await fetchApi({
-        
         body: {
           operation: 'subscribe',
           key: selectedKey
@@ -460,7 +459,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const handleUnsubscribe = async () => {
     try {
       const data = await fetchApi({
-        
         body: {
           operation: 'unsubscribe',
           key: selectedKey
@@ -484,13 +482,154 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
   }
 
+  // Auto-unsubscribe on unmount
+  useEffect(() => {
+    return () => {
+      if (isSubscribed) {
+        fetchApi({
+          body: {
+            operation: 'unsubscribe',
+            key: selectedKey
+          }
+        }).catch(() => {})
+      }
+    }
+  }, [selectedKey])
+
+  const handleFlush = async () => {
+    setIsFlushing(true)
+    try {
+      const data = await fetchApi({
+        body: { operation: 'flush' }
+      })
+      if (data.success) {
+        toast({ title: "Success", description: "All data flushed to disk." })
+      } else {
+        throw new Error(data.message)
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to flush data.", variant: "destructive" })
+    } finally {
+      setIsFlushing(false)
+    }
+  }
+
+  const handleReload = async () => {
+    setIsReloading(true)
+    try {
+      const data = await fetchApi({
+        body: {
+          operation: 'reloadkey',
+          key: selectedKey
+        }
+      })
+      if (data.success) {
+        toast({ title: "Success", description: data.data?.message || `Key "${selectedKey}" reloaded.` })
+        onWrite()
+      } else {
+        throw new Error(data.message)
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to reload key.", variant: "destructive" })
+    } finally {
+      setIsReloading(false)
+    }
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    const exportPayload: any = {
+      format: exportFormat
+    }
+    if (lastX) {
+      exportPayload.lastx = parseInt(lastX)
+    } else if (startTime && endTime) {
+      exportPayload.start_timestamp = parseInt(startTime)
+      exportPayload.end_timestamp = parseInt(endTime)
+      if (downsampling) {
+        exportPayload.downsampling = parseInt(downsampling)
+        exportPayload.aggregation = aggregationMethod
+      }
+    } else {
+      exportPayload.lastx = 1000
+    }
+
+    try {
+      const data = await fetchApi({
+        body: {
+          operation: 'export',
+          key: selectedKey,
+          export: exportPayload
+        }
+      })
+      if (data.success && data.data) {
+        const exportData = data.data.data
+        const mimeType = exportFormat === 'csv' ? 'text/csv' : 'application/json'
+        const extension = exportFormat === 'csv' ? 'csv' : 'json'
+        const blob = new Blob(
+          [typeof exportData === 'string' ? exportData : JSON.stringify(exportData, null, 2)],
+          { type: mimeType }
+        )
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${selectedKey}_export.${extension}`
+        a.click()
+        URL.revokeObjectURL(url)
+        toast({
+          title: "Success",
+          description: `Data exported as ${exportFormat.toUpperCase()}.`,
+        })
+      } else {
+        throw new Error(data.message || 'Export failed')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export data. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleCompact = async () => {
+    setIsCompacting(true)
+    try {
+      const data = await fetchApi({
+        body: {
+          operation: 'compact',
+          key: selectedKey
+        }
+      })
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: data.data?.message || `Key "${selectedKey}" compacted successfully.`,
+        })
+        onWrite()
+      } else {
+        throw new Error(data.message || 'Compact failed')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to compact key. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCompacting(false)
+    }
+  }
+
   const handleRename = async () => {
     try {
       const data = await fetchApi({
         
         body: {
           operation: 'renamekey',
-          Key: selectedKey,
+          key: selectedKey,
           toKey: newKeyName
         }
       })
@@ -603,6 +742,22 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             <CardTitle className="text-2xl font-bold">{selectedKey}</CardTitle>
           </div>
           <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReload}
+              disabled={isReloading}
+            >
+              {isReloading ? 'Reloading...' : 'Reload Key'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFlush}
+              disabled={isFlushing}
+            >
+              {isFlushing ? 'Flushing...' : 'Flush All'}
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -727,6 +882,38 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
                   onClick={() => setAggregationOption('last')}
                 >
                   Last
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'count' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('count')}
+                >
+                  Count
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'median' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('median')}
+                >
+                  Median
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'p95' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('p95')}
+                >
+                  p95
+                </Button>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant={aggregationMethod === 'p99' ? 'default' : 'outline'}
+                  onClick={() => setAggregationOption('p99')}
+                >
+                  p99
                 </Button>
               </div>
             </div>
@@ -948,6 +1135,50 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           <span className="text-sm font-medium text-gray-700">Subscription Status: {isSubscribed ? 'Subscribed' : 'Not Subscribed'}</span>
           <Button onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}>
             {isSubscribed ? 'Unsubscribe' : 'Subscribe'}
+          </Button>
+        </div>
+        <Separator className="my-4" />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Export Data</label>
+          <div className="flex items-center space-x-2">
+            <select
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as 'csv' | 'json')}
+            >
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+            <Button onClick={handleExport} disabled={isExporting} variant="outline">
+              {isExporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                'Export'
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500">
+            Exports using current read parameters (time range / lastX / downsampling).
+          </p>
+        </div>
+        <Separator className="my-4" />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Compaction</label>
+          <p className="text-xs text-gray-500">
+            Rewrite key files to reclaim disk space from deleted data points. The server also runs automatic background compaction.
+          </p>
+          <Button onClick={handleCompact} disabled={isCompacting} variant="outline" size="sm">
+            {isCompacting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Compacting...
+              </>
+            ) : (
+              'Compact Key'
+            )}
           </Button>
         </div>
         <DeleteKeyModal

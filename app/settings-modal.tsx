@@ -290,6 +290,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="token">Auth Token</Label>
+              <Input
+                id="token"
+                value={localSettings.token}
+                onChange={(e) => handleInputChange('token', e.target.value)}
+                placeholder="Bearer token for GTSDB authentication"
+              />
+              <p className="text-sm text-muted-foreground">
+                Leave empty if GTSDB has no_auth_user configured.
+              </p>
+            </div>
+
             <div className="flex justify-end">
               <Button onClick={handleSave}>
                 Save Settings

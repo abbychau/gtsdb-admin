@@ -22,7 +22,8 @@ export default function WriteData({ selectedKey, onWrite }: WriteDataProps) {
       
       body: {
         operation: 'write',
-        Write: { key: selectedKey, Value: parseFloat(value) }
+        key: selectedKey,
+        write: { value: parseFloat(value) }
       }
     })
     if (data.success) {

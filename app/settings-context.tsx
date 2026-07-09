@@ -9,6 +9,7 @@ interface Settings {
   hostname: string;
   port: string;
   apiUrl: string;
+  token: string;
 }
 
 const defaultSettings: Settings = {
@@ -16,7 +17,8 @@ const defaultSettings: Settings = {
   showRequest: true,
   hostname: '',
   port: '',
-  apiUrl: DEFAULT_API_URL
+  apiUrl: DEFAULT_API_URL,
+  token: ''
 };
 
 const SettingsContext = createContext<{

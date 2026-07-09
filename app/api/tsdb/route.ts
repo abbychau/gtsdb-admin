@@ -29,6 +29,28 @@ async function fetchFromAPI(body: any, apiUrl: string) {
   }
 }
 
+async function fetchFromAPIWithAuth(body: any, apiUrl: string, token: string) {
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching from API:', error)
+    throw error
+  }
+}
+
 // Add OPTIONS handler for preflight requests
 export async function OPTIONS(req: Request) {
   return corsResponse(NextResponse.json({}, { status: 200 }))
@@ -42,6 +64,9 @@ export async function POST(req: Request) {
     const url = new URL(req.url)
     const apiUrlFromQuery = url.searchParams.get('apiUrl')
     const apiUrl = apiUrlFromQuery || req.headers.get('x-api-url') || 'http://gtsdb-web.abby.md'
+    
+    // Get auth token from header
+    const token = req.headers.get('x-api-token') || ''
     
     console.log('Server side: API URL:', apiUrl)
     console.log('Server side: Request body:', body)
@@ -111,9 +136,11 @@ export async function POST(req: Request) {
         const writer = stream.writable.getWriter()
         console.log(body)
         // Start SSE connection to API
+        const fetchHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
         fetch(apiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: fetchHeaders,
           body: JSON.stringify(body)
         }).then(async response => {
           console.log(response)
@@ -146,11 +173,18 @@ export async function POST(req: Request) {
       case 'initkey':
       case 'deletekey':
       case 'renamekey':
+      case 'reloadkey':
       case 'multi-read':
       case 'serverInfo':
       case 'data-patch':
-      case 'deleteDataPoint': {
-        const data = await fetchFromAPI(body, apiUrl)
+      case 'deleteDataPoint':
+      case 'batch-write':
+      case 'export':
+      case 'compact':
+      case 'flush': {
+        const data = token
+          ? await fetchFromAPIWithAuth(body, apiUrl, token)
+          : await fetchFromAPI(body, apiUrl)
         return NextResponse.json({ success: true, data })
       }
       default:

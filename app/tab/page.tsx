@@ -57,7 +57,7 @@ function TabContent() {
       const data = await fetchApi({
         body: JSON.stringify({
           operation: 'renamekey',
-          Key: oldKey,
+          key: oldKey,
           toKey: newKey
         })
       })

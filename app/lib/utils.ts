@@ -29,12 +29,14 @@ const API_ENDPOINT = '/api/tsdb';
 export async function fetchApi(options: ApiOptions) {
   const { method = 'POST', body } = options;
   
-  // Get API URL from localStorage
+  // Get API URL and token from localStorage
   let apiUrl = DEFAULT_API_URL;
+  let token = '';
   const lsString = localStorage.getItem('gtsdb-settings');
   if (lsString) {
     const settings = JSON.parse(lsString);
     apiUrl = settings.apiUrl;
+    token = settings.token || '';
   }
   
   // Return empty response if API URL is not set
@@ -49,12 +51,16 @@ export async function fetchApi(options: ApiOptions) {
   
   // Proceed with API call if URL is set
   const bodyString = body ? JSON.stringify(body) : undefined;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-api-url': apiUrl
+  };
+  if (token) {
+    headers['x-api-token'] = token;
+  }
   const response = await fetch(API_ENDPOINT, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-url': apiUrl
-    },
+    headers,
     body: bodyString
   });
   
