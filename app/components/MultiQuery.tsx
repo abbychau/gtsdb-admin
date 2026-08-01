@@ -111,10 +111,10 @@ export default function MultiQuery({ keys }: MultiQueryProps) {
     return () => clearInterval(t)
   }, [live, runQuery])
 
-  // Initial time range.
+  // Initial time range: now - 1 day → now.
   useEffect(() => {
     const end = Math.floor(Date.now() / 1000)
-    setStartInput(epochToLocalInput(end - 3600))
+    setStartInput(epochToLocalInput(end - 86400))
     setEndInput(epochToLocalInput(end))
   }, [])
 
