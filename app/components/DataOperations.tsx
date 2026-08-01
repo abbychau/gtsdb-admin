@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Database, Copy, Code, RefreshCw, ArrowLeft } from 'lucide-react'
+import { Loader2, Database, Copy, Code, RefreshCw, ArrowLeft, Save, Pencil, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import DataPatchTool from './DataPatchTool'
@@ -685,7 +685,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   return (
     <div className="space-y-4">
       {/* Toolbar: back + key + actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {onBack && (
             <Button variant="ghost" size="icon" onClick={onBack} title="Back to overview">
@@ -701,36 +701,44 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               size="sm"
               onClick={handleReload}
               disabled={isReloading}
+              className="gap-1.5"
             >
-              {isReloading ? 'Reloading...' : 'Reload Key'}
+              <RefreshCw className="h-3.5 w-3.5" />
+              {isReloading ? 'Reloading...' : 'Reload'}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleFlush}
               disabled={isFlushing}
+              className="gap-1.5"
             >
-              {isFlushing ? 'Flushing...' : 'Flush All'}
+              <Save className="h-3.5 w-3.5" />
+              {isFlushing ? 'Flushing...' : 'Flush'}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsRenameModalOpen(true)}
+              className="gap-1.5"
             >
-              Rename Key
+              <Pencil className="h-3.5 w-3.5" />
+              Rename
             </Button>
             <Button
               variant="destructive"
               size="sm"
               onClick={() => setIsDeleteModalOpen(true)}
+              className="gap-1.5"
             >
-              Delete Key
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
             </Button>
           </div>
       </div>
 
       {/* Main container */}
-      <Card className="shadow-none">
+      <Card className="border-0 shadow-none">
         <CardContent className="p-4">
           <form onSubmit={handleReadAndPlot} className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
