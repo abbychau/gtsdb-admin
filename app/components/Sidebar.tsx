@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, ServerIcon, RefreshCw, BarChart3 } from 'lucide-react'
+import { TreeView } from './TreeView'
 import { ServerInfo } from './ServerInfo'
 import {
   Popover,
@@ -9,7 +10,6 @@ import {
 } from "@/components/ui/popover"
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 
 interface SidebarProps {
   keys: Array<{ key: string; count: number }>;  // Modified type to include count
@@ -17,14 +17,22 @@ interface SidebarProps {
   onSelectKey: (key: string) => void
   onInitKey: () => void
   onRefreshKeys: () => void
-  onOpenComparisonTool?: () => void
+  onCompare?: (keys: string[]) => void
 }
 
-export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys, onOpenComparisonTool }: SidebarProps) {
+export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onRefreshKeys, onCompare }: SidebarProps) {
   const [filter, setFilter] = useState('')
-  const filteredKeys = keys?.filter(key => 
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([])
+  const filteredKeys = keys?.filter(key =>
     key.key.toLowerCase().includes(filter.toLowerCase())
   ).sort((a, b) => a.key.localeCompare(b.key))
+
+  const toggleKey = (key: string) => {
+    setSelectedKeys(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    )
+  }
+  const clearSelected = () => setSelectedKeys([])
 
   return (
     <Card className="w-74 h-[calc(100vh - 4)] flex flex-col m-4 mr-0">
@@ -44,10 +52,10 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onR
               <ServerInfo />
             </PopoverContent>
           </Popover>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
-            onClick={onRefreshKeys}  // Changed from window.location.reload()
+            onClick={onRefreshKeys}
             className="ml-2"
           >
             <RefreshCw className="h-4 w-4" />
@@ -62,13 +70,24 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onR
         >
           <Plus className="mr-2 h-4 w-4" /> Add Key
         </Button>
-        {onOpenComparisonTool && (
+        {onCompare && (
           <Button
-            onClick={onOpenComparisonTool}
+            onClick={() => { onCompare(selectedKeys); clearSelected(); }}
             className="w-full mb-4"
             variant="outline"
+            disabled={selectedKeys.length === 0}
           >
-            <BarChart3 className="mr-2 h-4 w-4" /> Comparison Tool
+            <BarChart3 className="mr-2 h-4 w-4" /> Query selected ({selectedKeys.length})
+          </Button>
+        )}
+        {selectedKeys.length > 0 && (
+          <Button
+            onClick={clearSelected}
+            className="w-full mb-4"
+            variant="ghost"
+            size="sm"
+          >
+            Clear selection
           </Button>
         )}
         <Input
@@ -77,35 +96,15 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onR
           onChange={(e) => setFilter(e.target.value)}
           className="w-full mb-4"
         />
-        {/* Flat key list — simpler than a tree, mirrors the cloud explorer. */}
-        <div className="space-y-0.5">
-          {(filteredKeys || []).map((k) => {
-            const active = selectedKey === k.key;
-            return (
-              <button
-                key={k.key}
-                type="button"
-                onClick={() => onSelectKey(k.key)}
-                className={cn(
-                  "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-                  active && "bg-primary/10 font-medium text-primary"
-                )}
-              >
-                <span className="truncate font-mono text-xs">{k.key}</span>
-                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                  {(k.count ?? 0).toLocaleString()}
-                </span>
-              </button>
-            );
-          })}
-          {(!filteredKeys || filteredKeys.length === 0) && (
-            <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-              {filter ? "No keys match your filter." : "No keys yet."}
-            </p>
-          )}
-        </div>
+        <TreeView
+          items={filteredKeys || []}
+          selectedKeys={selectedKeys}
+          onToggleKey={toggleKey}
+          onSelectKey={onSelectKey}
+        />
       </CardContent>
     </Card>
   )
 }
+
 

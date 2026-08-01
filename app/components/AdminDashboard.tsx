@@ -12,6 +12,8 @@ interface Tab {
   title: string
   keyName: string
   isComparisonTool?: boolean
+  isMultiQuery?: boolean
+  keys?: string[]
 }
 
 interface AdminDashboardProps {
@@ -97,20 +99,27 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
     setActiveTabId(newTab.id)
   }
 
-  const openComparisonTool = () => {
-    // Check if comparison tool tab already exists
-    const existingTab = tabs.find(tab => tab.isComparisonTool)
+  const openMultiQuery = (keys: string[]) => {
+    if (keys.length === 0) return
+    // A single multi-query tab, updated with the current selection (like the
+    // cloud explorer's multi-select view).
+    const existingTab = tabs.find(tab => tab.isMultiQuery)
     if (existingTab) {
+      setTabs(prevTabs => prevTabs.map(tab =>
+        tab.isMultiQuery
+          ? { ...tab, title: `Query (${keys.length})`, keyName: keys.join(', '), keys }
+          : tab
+      ))
       setActiveTabId(existingTab.id)
       return
     }
 
-    // Create comparison tool tab
     const newTab: Tab = {
-      id: 'comparison-tool',
-      title: 'Comparison Tool',
-      keyName: 'comparison-tool',
-      isComparisonTool: true
+      id: 'multi-query',
+      title: `Query (${keys.length})`,
+      keyName: keys.join(', '),
+      isMultiQuery: true,
+      keys,
     }
 
     setTabs(prevTabs => [...prevTabs, newTab])
@@ -162,7 +171,7 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
         onSelectKey={createTab}
         onInitKey={() => setIsInitKeyModalOpen(true)}
         onRefreshKeys={fetchKeys}
-        onOpenComparisonTool={openComparisonTool}
+        onCompare={openMultiQuery}
       />
       <div className="flex-1 flex flex-col">
         <div className="flex-1">

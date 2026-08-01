@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import MultiQuery from './MultiQuery'
 
 interface Tab {
   id: string
   title: string
   keyName: string
   isComparisonTool?: boolean
+  isMultiQuery?: boolean
+  keys?: string[]
 }
 
 function formatTabTitle(keyName: string) {
@@ -64,7 +67,7 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
             let displayTitle = tab.title
             let folder = ''
             
-            if (!tab.isComparisonTool) {
+            if (!tab.isComparisonTool && !tab.isMultiQuery) {
               const { folder: f, key } = formatTabTitle(tab.keyName)
               folder = f
               displayTitle = key
@@ -118,7 +121,9 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
               activeTabId === tab.id ? "block" : "hidden"
             )}
           >
-            {tab.isComparisonTool ? (
+            {tab.isMultiQuery ? (
+              <MultiQuery keys={tab.keys || []} />
+            ) : tab.isComparisonTool ? (
               <iframe
                 src="/comparison"
                 className="w-full h-full border-0"
