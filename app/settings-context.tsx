@@ -24,7 +24,7 @@ const defaultSettings: Settings = {
 const SettingsContext = createContext<{
   settings: Settings;
   updateSettings: (newSettings: Partial<Settings>) => void;
-  initializeFromURL: (apiUrl: string) => void;
+  initializeFromURL: (apiUrl: string, token?: string) => void;
 }>({
   settings: defaultSettings,
   updateSettings: () => {},
@@ -48,8 +48,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
     }, []);
 
-    const initializeFromURL = (apiUrl: string) => {
-      const updated = { ...settings, apiUrl };
+    const initializeFromURL = (apiUrl: string, token?: string) => {
+      const updated = { ...settings, apiUrl, ...(token ? { token } : {}) };
       setSettings(updated);
       localStorage.setItem('gtsdb-settings', JSON.stringify(updated));
       console.log('Settings initialized from URL:', updated);

@@ -16,9 +16,10 @@ export default function Home() {
 
     const url = new URL(window.location.href);
     const apiUrl = url.searchParams.get('apiurl');
+    const token = url.searchParams.get('token') || '';
 
     if (apiUrl) {
-      initializeFromURL(apiUrl);
+      initializeFromURL(apiUrl, token);
       setIsSettingsOpen(false);
       setShouldLoadData(true);
       initialized.current = true;
