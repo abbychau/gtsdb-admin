@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useConfig } from "@/config-context"
 
 export interface KeyCountItem {
   key: string
@@ -26,10 +27,17 @@ interface OverviewProps {
   onRefresh: () => void
 }
 
+function formatScale(multiplier: number, offset: number): string {
+  const parts: string[] = []
+  if (multiplier !== 1) parts.push(`×${multiplier}`)
+  if (offset !== 0) parts.push(`${offset > 0 ? "+" : ""}${offset}`)
+  return parts.length > 0 ? parts.join(" ") : "1:1"
+}
+
 export default function Overview({ keys, onSelectKey, onAddKey, onRefresh }: OverviewProps) {
   const [filter, setFilter] = useState("")
+  const { getMultiplier, getUnit, getOffset, getHint } = useConfig()
 
-  const totalPoints = keys.reduce((sum, k) => sum + (k.count || 0), 0)
   const filteredKeys = keys
     .filter((k) => k.key.toLowerCase().includes(filter.toLowerCase()))
     .sort((a, b) => a.key.localeCompare(b.key))
@@ -83,32 +91,35 @@ export default function Overview({ keys, onSelectKey, onAddKey, onRefresh }: Ove
                 <TableRow>
                   <TableHead>Key</TableHead>
                   <TableHead className="text-right">Data points</TableHead>
-                  <TableHead className="w-1/3">Share</TableHead>
+                  <TableHead className="text-right">Unit</TableHead>
+                  <TableHead className="text-right">Scale</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredKeys.map((k) => (
-                  <TableRow
-                    key={k.key}
-                    className="cursor-pointer"
-                    onClick={() => onSelectKey(k.key)}
-                  >
-                    <TableCell className="font-mono text-sm">{k.key}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {k.count.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary/80"
-                          style={{
-                            width: totalPoints > 0 ? `${Math.max(2, (k.count / totalPoints) * 100)}%` : "0%",
-                          }}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredKeys.map((k) => {
+                  const unit = getUnit(k.key)
+                  const hint = getHint(k.key)
+                  return (
+                    <TableRow
+                      key={k.key}
+                      className="cursor-pointer"
+                      onClick={() => onSelectKey(k.key)}
+                    >
+                      <TableCell className="font-mono text-sm">
+                        <span title={hint || k.key}>{k.key}</span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {k.count.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {unit ? <span className="font-medium">{unit}</span> : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                        {formatScale(getMultiplier(k.key), getOffset(k.key))}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
