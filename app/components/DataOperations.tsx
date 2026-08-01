@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateTimePicker } from './DateTimePicker'
 import { useSettings } from '@/settings-context'
 import { useConfig } from '@/config-context'
-import { copyToClipboard, fetchApi } from '@/lib/utils'
+import { cn, copyToClipboard, fetchApi } from '@/lib/utils'
 
 const AGGREGATIONS = ['avg', 'sum', 'min', 'max', 'first', 'last', 'count', 'median', 'p95', 'p99']
 
@@ -33,9 +33,11 @@ interface DataOperationsProps {
   onDeleteKey: (key: string) => void
   onRename: (oldKey: string, newKey: string) => void
   onBack?: () => void
+  keys?: { key: string; count: number }[]
+  onSelectKey?: (key: string) => void
 }
 
-export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRename, onBack }: DataOperationsProps) {
+export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRename, onBack, keys, onSelectKey }: DataOperationsProps) {
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [downsampling, setDownsampling] = useState('')
@@ -682,6 +684,13 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
   }
 
+  // Sibling series in the same folder (cloud-explorer style navigation)
+  const parts = selectedKey.split('_')
+  const folderPrefix = parts.length > 1 ? `${parts[0]}_` : ''
+  const siblings = (keys || [])
+    .filter((k) => (folderPrefix ? k.key.startsWith(folderPrefix) : true))
+    .sort((a, b) => a.key.localeCompare(b.key))
+
   return (
     <div className="space-y-4">
       {/* Toolbar: back + key + actions */}
@@ -737,9 +746,43 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           </div>
       </div>
 
-      {/* Main container */}
-      <Card className="border-0 shadow-none">
-        <CardContent className="p-4">
+      {/* Split layout: series (left) + query panel (right), like the cloud explorer */}
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+        {/* Series navigator */}
+        <Card className="h-fit border-0 shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {folderPrefix ? folderPrefix.replace(/_$/, '') : 'Series'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {siblings.length === 0 ? (
+              <p className="px-2 py-3 text-xs text-muted-foreground">No other series.</p>
+            ) : (
+              siblings.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => onSelectKey?.(s.key)}
+                  className={cn(
+                    'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted',
+                    s.key === selectedKey && 'bg-primary/10 font-medium'
+                  )}
+                >
+                  <span className="truncate font-mono text-xs">
+                    {folderPrefix ? s.key.replace(folderPrefix, '') : s.key}
+                  </span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {s.count.toLocaleString()}
+                  </span>
+                </button>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Query panel */}
+        <Card className="border-0 shadow-none">
+          <CardContent className="p-4">
           <form onSubmit={handleReadAndPlot} className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Select value={mode} onValueChange={(v) => setMode(v as 'last' | 'range')}>
@@ -1042,8 +1085,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             )}
           </Button>
         </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <DeleteKeyModal
         isOpen={isDeleteModalOpen}

@@ -153,7 +153,9 @@ export default function AdminDashboard({ shouldLoadData = true, onOpenSettings }
         {selectedKey ? (
           <KeyDetail
             keyName={selectedKey}
+            keys={keys}
             onBack={handleClearView}
+            onSelectKey={handleSelectKey}
             onDeleteKey={handleDeleteKey}
             onRename={handleRename}
             onKeyWrite={handleKeyWrite}
