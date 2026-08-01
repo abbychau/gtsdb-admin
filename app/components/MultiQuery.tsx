@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { fetchApi } from '@/lib/utils'
+import { DateTimePicker } from './DateTimePicker'
 
 interface MultiQueryProps {
   keys: string[]
@@ -186,16 +187,17 @@ export default function MultiQuery({ keys }: MultiQueryProps) {
               />
             ) : (
               <>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
+                  onChange={setStartInput}
+                  placeholder="Start"
                   className="w-48"
                 />
-                <Input
-                  type="datetime-local"
+                <span className="text-muted-foreground">→</span>
+                <DateTimePicker
                   value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
+                  onChange={setEndInput}
+                  placeholder="End"
                   className="w-48"
                 />
               </>
