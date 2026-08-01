@@ -729,8 +729,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           </div>
       </div>
 
-      {/* Query box */}
-      <form onSubmit={handleReadAndPlot} className="space-y-3">
+      {/* Main container */}
+      <Card className="shadow-none">
+        <CardContent className="p-4">
+          <form onSubmit={handleReadAndPlot} className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Select value={mode} onValueChange={(v) => setMode(v as 'last' | 'range')}>
               <SelectTrigger className="h-9 w-28">
@@ -1032,15 +1034,18 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             )}
           </Button>
         </div>
-        <DeleteKeyModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onConfirm={() => {
-            onDeleteKey(selectedKey)
-            setIsDeleteModalOpen(false)
-          }}
-          keyName={selectedKey}
-        />
+        </CardContent>
+      </Card>
+
+      <DeleteKeyModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => {
+          onDeleteKey(selectedKey)
+          setIsDeleteModalOpen(false)
+        }}
+        keyName={selectedKey}
+      />
       <AlertDialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
