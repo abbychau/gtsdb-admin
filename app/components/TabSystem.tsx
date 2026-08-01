@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import MultiQuery from './MultiQuery'
+import DataOperations from './DataOperations'
 
-interface Tab {
+export interface Tab {
   id: string
   title: string
   keyName: string
-  isComparisonTool?: boolean
   isMultiQuery?: boolean
   keys?: string[]
 }
@@ -34,22 +33,20 @@ interface TabSystemProps {
   activeTabId: string | null
   onTabSelect: (tabId: string) => void
   onTabClose: (tabId: string) => void
+  onDeleteKey?: (key: string) => void
+  onRename?: (oldKey: string, newKey: string) => void
+  onKeyWrite?: () => void
 }
 
-export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSystemProps) {
-  // Notify iframe when it becomes visible to handle chart resize
-  useEffect(() => {
-    if (activeTabId) {
-      const iframe = document.querySelector(`iframe[data-tab-id="${activeTabId}"]`) as HTMLIFrameElement
-      if (iframe && iframe.contentWindow) {
-        // Small delay to ensure iframe is ready
-        setTimeout(() => {
-          iframe.contentWindow?.postMessage({ type: 'tabActivated' }, '*')
-        }, 100)
-      }
-    }
-  }, [activeTabId])
-
+export function TabSystem({
+  tabs,
+  activeTabId,
+  onTabSelect,
+  onTabClose,
+  onDeleteKey,
+  onRename,
+  onKeyWrite,
+}: TabSystemProps) {
   if (tabs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -66,13 +63,13 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
           {tabs.map((tab) => {
             let displayTitle = tab.title
             let folder = ''
-            
-            if (!tab.isComparisonTool && !tab.isMultiQuery) {
+
+            if (!tab.isMultiQuery) {
               const { folder: f, key } = formatTabTitle(tab.keyName)
               folder = f
               displayTitle = key
             }
-            
+
             return (
               <div
                 key={tab.id}
@@ -111,31 +108,24 @@ export function TabSystem({ tabs, activeTabId, onTabSelect, onTabClose }: TabSys
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — rendered inline (no iframes) */}
       <div className="flex-1 relative">
         {tabs.map((tab) => (
           <div
             key={tab.id}
             className={cn(
-              "absolute inset-0",
+              "absolute inset-0 overflow-hidden",
               activeTabId === tab.id ? "block" : "hidden"
             )}
           >
             {tab.isMultiQuery ? (
               <MultiQuery keys={tab.keys || []} />
-            ) : tab.isComparisonTool ? (
-              <iframe
-                src="/comparison"
-                className="w-full h-full border-0"
-                title="Comparison Tool"
-                data-tab-id={tab.id}
-              />
             ) : (
-              <iframe
-                src={`/tab?key=${encodeURIComponent(tab.keyName)}`}
-                className="w-full h-full border-0"
-                title={`Data operations for ${tab.title}`}
-                data-tab-id={tab.id}
+              <DataOperations
+                selectedKey={tab.keyName}
+                onWrite={onKeyWrite || (() => {})}
+                onDeleteKey={onDeleteKey || (() => {})}
+                onRename={onRename || (() => {})}
               />
             )}
           </div>

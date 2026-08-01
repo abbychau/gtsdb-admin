@@ -11,7 +11,6 @@ interface Tab {
   id: string
   title: string
   keyName: string
-  isComparisonTool?: boolean
   isMultiQuery?: boolean
   keys?: string[]
 }
@@ -36,40 +35,74 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
     }
   }, [shouldLoadData, hasLoadedData]);
 
-  // Listen for messages from tab iframes
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'keyDeleted') {
-        const deletedKey = event.data.key
-        // Remove the key from the keys list
-        setKeys(prevKeys => prevKeys.filter(key => key.key !== deletedKey))
-        // Close the tab for this key
+  // Inline handlers — no iframes, no postMessage
+  const handleKeyWrite = () => {
+    fetchKeys()
+  }
+
+  const handleDeleteKey = async (key: string) => {
+    try {
+      const data = await fetchApi({
+        body: JSON.stringify({ operation: 'deletekey', key })
+      })
+      if (data.success) {
+        setKeys(prevKeys => prevKeys.filter(k => k.key !== key))
         setTabs(prevTabs => {
-          const newTabs = prevTabs.filter(tab => tab.keyName !== deletedKey)
-          // If the active tab was closed, set active tab to the first remaining tab
-          if (activeTabId && prevTabs.find(tab => tab.id === activeTabId)?.keyName === deletedKey) {
+          const newTabs = prevTabs.filter(tab => tab.keyName !== key)
+          if (activeTabId && prevTabs.find(tab => tab.id === activeTabId)?.keyName === key) {
             setActiveTabId(newTabs.length > 0 ? newTabs[0].id : null)
           }
           return newTabs
         })
-      } else if (event.data.type === 'keyRenamed') {
-        const { oldKey, newKey } = event.data
-        // Update the key in the keys list
-        setKeys(prevKeys => prevKeys.map(key => 
-          key.key === oldKey ? { ...key, key: newKey } : key
+        toast({
+          title: "Success",
+          description: `Key "${key}" deleted successfully.`,
+        })
+      } else {
+        throw new Error(data.message)
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete key. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleRename = async (oldKey: string, newKey: string) => {
+    try {
+      const data = await fetchApi({
+        body: JSON.stringify({
+          operation: 'renamekey',
+          key: oldKey,
+          toKey: newKey
+        })
+      })
+      if (data.success) {
+        setKeys(prevKeys => prevKeys.map(k =>
+          k.key === oldKey ? { ...k, key: newKey } : k
         ))
-        // Update the tab title and keyName
-        setTabs(prevTabs => prevTabs.map(tab => 
-          tab.keyName === oldKey 
+        setTabs(prevTabs => prevTabs.map(tab =>
+          tab.keyName === oldKey
             ? { ...tab, title: newKey, keyName: newKey }
             : tab
         ))
+        toast({
+          title: "Success",
+          description: `Key "${oldKey}" renamed to "${newKey}" successfully.`,
+        })
+      } else {
+        throw new Error(data.message)
       }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to rename key. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [activeTabId]);
+  }
 
   const fetchKeys = async () => {
     const data = await fetchApi({
@@ -180,6 +213,9 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
             activeTabId={activeTabId}
             onTabSelect={setActiveTabId}
             onTabClose={closeTab}
+            onDeleteKey={handleDeleteKey}
+            onRename={handleRename}
+            onKeyWrite={handleKeyWrite}
           />
         </div>
         {/* footer about message - only show when no tabs are open */}
