@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateTimePicker } from './DateTimePicker'
 import { useSettings } from '@/settings-context'
 import { useConfig } from '@/config-context'
-import { cn, copyToClipboard, fetchApi } from '@/lib/utils'
+import { copyToClipboard, fetchApi } from '@/lib/utils'
 
 const AGGREGATIONS = ['avg', 'sum', 'min', 'max', 'first', 'last', 'count', 'median', 'p95', 'p99']
 
@@ -33,11 +33,9 @@ interface DataOperationsProps {
   onDeleteKey: (key: string) => void
   onRename: (oldKey: string, newKey: string) => void
   onBack?: () => void
-  keys?: { key: string; count: number }[]
-  onSelectKey?: (key: string) => void
 }
 
-export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRename, onBack, keys, onSelectKey }: DataOperationsProps) {
+export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRename, onBack }: DataOperationsProps) {
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [downsampling, setDownsampling] = useState('')
@@ -684,16 +682,9 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
   }
 
-  // Sibling series in the same folder (cloud-explorer style navigation)
-  const parts = selectedKey.split('_')
-  const folderPrefix = parts.length > 1 ? `${parts[0]}_` : ''
-  const siblings = (keys || [])
-    .filter((k) => (folderPrefix ? k.key.startsWith(folderPrefix) : true))
-    .sort((a, b) => a.key.localeCompare(b.key))
-
   return (
     <div className="space-y-4">
-      {/* Toolbar: back + key + actions */}
+      {/* Toolbar: back + key + actions (shadcn toolbar style: grouped buttons + separator) */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {onBack && (
@@ -704,85 +695,52 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           <Database className="h-5 w-5 text-muted-foreground" />
           <h2 className="text-lg font-bold">{selectedKey}</h2>
         </div>
-        <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReload}
-              disabled={isReloading}
-              className="gap-1.5"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              {isReloading ? 'Reloading...' : 'Reload'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleFlush}
-              disabled={isFlushing}
-              className="gap-1.5"
-            >
-              <Save className="h-3.5 w-3.5" />
-              {isFlushing ? 'Flushing...' : 'Flush'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsRenameModalOpen(true)}
-              className="gap-1.5"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Rename
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="gap-1.5"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Delete
-            </Button>
-          </div>
+        <div className="flex items-center gap-0.5 rounded-lg border bg-muted/40 p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleReload}
+            disabled={isReloading}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            {isReloading ? 'Reloading...' : 'Reload'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleFlush}
+            disabled={isFlushing}
+          >
+            <Save className="h-3.5 w-3.5" />
+            {isFlushing ? 'Flushing...' : 'Flush'}
+          </Button>
+          <Separator orientation="vertical" className="mx-1.5 h-5" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setIsRenameModalOpen(true)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Rename
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-destructive hover:text-destructive"
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </Button>
+        </div>
       </div>
 
-      {/* Split layout: series (left) + query panel (right), like the cloud explorer */}
-      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        {/* Series navigator */}
-        <Card className="h-fit border-0 shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">
-              {folderPrefix ? folderPrefix.replace(/_$/, '') : 'Series'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {siblings.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground">No other series.</p>
-            ) : (
-              siblings.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => onSelectKey?.(s.key)}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted',
-                    s.key === selectedKey && 'bg-primary/10 font-medium'
-                  )}
-                >
-                  <span className="truncate font-mono text-xs">
-                    {folderPrefix ? s.key.replace(folderPrefix, '') : s.key}
-                  </span>
-                  <span className="text-xs tabular-nums text-muted-foreground">
-                    {s.count.toLocaleString()}
-                  </span>
-                </button>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Query panel */}
-        <Card className="border-0 shadow-none">
-          <CardContent className="p-4">
+      {/* Main container */}
+      <Card className="border-0 shadow-none">
+        <CardContent className="p-4">
           <form onSubmit={handleReadAndPlot} className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Select value={mode} onValueChange={(v) => setMode(v as 'last' | 'range')}>
@@ -1085,9 +1043,8 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
             )}
           </Button>
         </div>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
 
       <DeleteKeyModal
         isOpen={isDeleteModalOpen}
