@@ -685,7 +685,7 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   return (
     <div className="space-y-4">
       {/* Toolbar: back + key + actions (shadcn toolbar style: grouped buttons + separator) */}
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="mx-3 mt-2 mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {onBack && (
             <Button variant="ghost" size="icon" onClick={onBack} title="Back to overview">
