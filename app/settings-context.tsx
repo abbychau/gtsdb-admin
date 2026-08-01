@@ -38,8 +38,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem('gtsdb-settings');
       if (saved) {
         const parsedSettings = JSON.parse(saved);
-        // Only use saved apiUrl if it's not empty
+        // Merge over defaults so missing keys (showVisualization etc.)
+        // keep their default values instead of becoming undefined.
         setSettings({
+          ...defaultSettings,
           ...parsedSettings,
           apiUrl: parsedSettings.apiUrl || DEFAULT_API_URL
         });

@@ -1,19 +1,31 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Database, Copy, Code } from 'lucide-react'
+import { Loader2, Database, Copy, Code, RefreshCw } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import DataPatchTool from './DataPatchTool'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import * as echarts from 'echarts'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DateTimePicker } from './DateTimePicker'
 import { useSettings } from '@/settings-context'
 import { useConfig } from '@/config-context'
 import { copyToClipboard, fetchApi } from '@/lib/utils'
+
+const AGGREGATIONS = ['avg', 'sum', 'min', 'max', 'first', 'last', 'count', 'median', 'p95', 'p99']
+
+function epochToLocalInput(ts: number) {
+  const d = new Date(ts * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`
+}
 
 interface DataOperationsProps {
   selectedKey: string
@@ -28,6 +40,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   const [downsampling, setDownsampling] = useState('')
   const [aggregationMethod, setAggregationMethod] = useState('avg')
   const [lastX, setLastX] = useState('')
+  const [mode, setMode] = useState<'last' | 'range'>('last')
+  const [startInput, setStartInput] = useState('')
+  const [endInput, setEndInput] = useState('')
+  const [live, setLive] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [writeValue, setWriteValue] = useState('')
   const [deleteValueOperator, setDeleteValueOperator] = useState<'>' | '<'>('>')
@@ -163,23 +179,33 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     }
   }, [selectedKey])
 
-  const handleReadAndPlot = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Default range: now - 1 day → now.
+  useEffect(() => {
+    const end = Math.floor(Date.now() / 1000)
+    setStartInput(epochToLocalInput(end - 86400))
+    setEndInput(epochToLocalInput(end))
+  }, [])
+
+  const runRead = useCallback(async () => {
     setIsReading(true)
 
-    const readPayload = {
-      start_timestamp: startTime ? parseInt(startTime) : undefined,
-      end_timestamp: endTime ? parseInt(endTime) : undefined,
-      downsampling: downsampling ? parseInt(downsampling) : undefined,
-      lastx: lastX ? parseInt(lastX) : undefined,
-      aggregation: downsampling ? aggregationMethod : undefined
-    };
-    // check if it is empty
-    const isEmpty = Object.keys(readPayload).length === 0 && readPayload.constructor === Object;
+    const readPayload =
+      mode === 'last'
+        ? { lastx: lastX ? parseInt(lastX) : 200, aggregation: aggregationMethod }
+        : {
+            start_timestamp: startInput
+              ? Math.floor(new Date(startInput).getTime() / 1000)
+              : undefined,
+            end_timestamp: endInput
+              ? Math.floor(new Date(endInput).getTime() / 1000)
+              : undefined,
+            downsampling: downsampling ? parseInt(downsampling) : undefined,
+            aggregation: aggregationMethod,
+          }
     const payload = {
       operation: 'read',
       key: selectedKey,
-      read: isEmpty ? undefined : readPayload
+      read: readPayload
     }
     setRequestPayload(payload)
     try {
@@ -293,7 +319,19 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     } finally {
       setIsReading(false)
     }
+  }, [mode, lastX, startInput, endInput, downsampling, aggregationMethod, selectedKey])
+
+  const handleReadAndPlot = (e: React.FormEvent) => {
+    e.preventDefault()
+    void runRead()
   }
+
+  // Live polling — mirrors the multi-key query view.
+  useEffect(() => {
+    if (!live) return
+    const t = setInterval(() => void runRead(), 5000)
+    return () => clearInterval(t)
+  }, [live, runRead])
 
   const handleWrite = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -330,63 +368,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
     } finally {
       setIsWriting(false)
     }
-  }
-
-  const setTimeOption = (field: 'start' | 'end', option: string) => {
-    const now = Math.floor(Date.now() / 1000)
-    const timeMap: { [key: string]: number } = {
-      'now': now,
-      '-1hr': now - 3600,
-      '-1day': now - 86400,
-      '-1week': now - 604800,
-      '-1month': now - 2592000,
-      '+1month': now + 2592000,
-      'clear': 0
-    }
-
-    if (field === 'start') {
-      setStartTime(option === 'clear' ? '' : timeMap[option].toString())
-    } else {
-      setEndTime(option === 'clear' ? '' : timeMap[option].toString())
-    }
-  }
-
-  const setDownsamplingOption = (option: string) => {
-    switch (option) {
-      case '5min':
-        setDownsampling('300')
-        break
-      case '1hr':
-        setDownsampling('3600')
-        break
-      case '1day':
-        setDownsampling('86400')
-        break
-      case '1week':
-        setDownsampling('604800')
-        break
-      case '1month':
-        setDownsampling('2592000')
-        break
-      case 'clear':
-        setDownsampling('')
-        break
-    }
-  }
-
-  const setLastXOption = (option: string) => {
-    switch (option) {
-      case 'clear':
-        setLastX('')
-        break
-      default:
-        setLastX(option)
-        break
-    }
-  }
-
-  const setAggregationOption = (option: string) => {
-    setAggregationMethod(option);
   }
 
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -743,176 +724,82 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
         </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleReadAndPlot} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Start Timestamp</label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                placeholder="Start Timestamp"
-              />
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', 'now')}>Now</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1hr')}>-1 hr</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1day')}>-1 day</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1week')}>-1 week</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', '-1month')}>-1 month</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', '+1month')}>+1 month</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('start', 'clear')}>Clear/All</Button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">End Timestamp</label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                placeholder="End Timestamp"
-              />
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', 'now')}>Now</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1hr')}>-1 hr</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1day')}>-1 day</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1week')}>-1 week</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', '-1month')}>-1 month</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', '+1month')}>+1 month</Button>
-              <Button type="button" size="sm" onClick={() => setTimeOption('end', 'clear')}>Clear/All</Button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Downsampling</label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                value={downsampling}
-                onChange={(e) => setDownsampling(e.target.value)}
-                placeholder="Downsampling"
-              />
-              <Button type="button" size="sm" onClick={() => setDownsamplingOption('5min')}>5 min</Button>
-              <Button type="button" size="sm" onClick={() => setDownsamplingOption('1hr')}>1 hr</Button>
-              <Button type="button" size="sm" onClick={() => setDownsamplingOption('1day')}>1 day</Button>
-              <Button type="button" size="sm" onClick={() => setDownsamplingOption('1week')}>1 week</Button>
-              <Button type="button" size="sm" onClick={() => setDownsamplingOption('1month')}>1 month</Button>
-              <Button type="button" size="sm" onClick={() => setDownsamplingOption('clear')}>Clear</Button>
-            </div>
-          </div>
-
-          {downsampling && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Aggregation Method</label>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'avg' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('avg')}
-                >
-                  Average
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'sum' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('sum')}
-                >
-                  Sum
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'min' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('min')}
-                >
-                  Min
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'max' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('max')}
-                >
-                  Max
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'first' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('first')}
-                >
-                  First
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'last' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('last')}
-                >
-                  Last
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'count' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('count')}
-                >
-                  Count
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'median' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('median')}
-                >
-                  Median
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'p95' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('p95')}
-                >
-                  p95
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant={aggregationMethod === 'p99' ? 'default' : 'outline'}
-                  onClick={() => setAggregationOption('p99')}
-                >
-                  p99
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Last X Records</label>
-            <div className="flex items-center space-x-2">
+        <form onSubmit={handleReadAndPlot} className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={mode} onValueChange={(v) => setMode(v as 'last' | 'range')}>
+              <SelectTrigger className="h-9 w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="last">Last N</SelectItem>
+                <SelectItem value="range">Range</SelectItem>
+              </SelectContent>
+            </Select>
+            {mode === 'last' ? (
               <Input
                 type="number"
                 value={lastX}
                 onChange={(e) => setLastX(e.target.value)}
-                placeholder="Last X Records (Will override downsampling)"
+                placeholder="200"
+                className="h-9 w-24"
               />
-              <Button type="button" size="sm" onClick={() => setLastXOption('20')}>10</Button>
-              <Button type="button" size="sm" onClick={() => setLastXOption('100')}>100</Button>
-              <Button type="button" size="sm" onClick={() => setLastXOption('500')}>500</Button>
-              <Button type="button" size="sm" onClick={() => setLastXOption('1000')}>1000</Button>
-              <Button type="button" size="sm" onClick={() => setLastXOption('10000')}>10000</Button>
-              <Button type="button" size="sm" onClick={() => setLastXOption('clear')}>Clear</Button>
-            </div>
-          </div>
-          <div className="flex space-x-2">
-            <Button type="submit" disabled={isReading}>
+            ) : (
+              <>
+                <DateTimePicker
+                  value={startInput}
+                  onChange={(v) => {
+                    setStartInput(v)
+                    setStartTime(v ? String(Math.floor(new Date(v).getTime() / 1000)) : '')
+                  }}
+                  placeholder="Start"
+                  className="w-48"
+                />
+                <span className="text-muted-foreground">→</span>
+                <DateTimePicker
+                  value={endInput}
+                  onChange={(v) => {
+                    setEndInput(v)
+                    setEndTime(v ? String(Math.floor(new Date(v).getTime() / 1000)) : '')
+                  }}
+                  placeholder="End"
+                  className="w-48"
+                />
+              </>
+            )}
+            <Select value={aggregationMethod} onValueChange={setAggregationMethod}>
+              <SelectTrigger className="h-9 w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AGGREGATIONS.map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="downsample"
+              value={downsampling}
+              onChange={(e) => setDownsampling(e.target.value)}
+              className="h-9 w-28"
+            />
+            <label className="flex items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={live}
+                onChange={(e) => setLive(e.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              Live
+            </label>
+            <Button type="submit" size="sm" disabled={isReading}>
               {isReading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Reading...
-                </>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
-                'Read'
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
               )}
+              Query
             </Button>
           </div>
         </form>

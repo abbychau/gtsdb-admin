@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Wand2, Eye, Clock, ChevronDown, ChevronRight } from 'lucide-react'
+import { Loader2, Eye, Clock } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { fetchApi } from '@/lib/utils'
 
@@ -25,17 +25,6 @@ export default function DataPatchTool({ selectedKey, onPatchComplete }: DataPatc
   const [previewData, setPreviewData] = useState<ParsedRow[] | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
-  const [showGenerator, setShowGenerator] = useState(false)
-
-  // Generator state
-  const [pattern, setPattern] = useState<'constant' | 'ramp' | 'sine' | 'random'>('constant')
-  const [genStartTs, setGenStartTs] = useState('')
-  const [genCount, setGenCount] = useState('20')
-  const [genInterval, setGenInterval] = useState('1')
-  const [genValue, setGenValue] = useState('100')
-  const [genValueEnd, setGenValueEnd] = useState('200')
-  const [genAmplitude, setGenAmplitude] = useState('50')
-  const [genPeriod, setGenPeriod] = useState('20')
 
   const parseCsv = useCallback((csv: string) => {
     const lines = csv.trim().split('\n')
@@ -67,45 +56,6 @@ export default function DataPatchTool({ selectedKey, onPatchComplete }: DataPatc
     setValidationErrors(errors)
     setShowPreview(true)
   }, [])
-
-  const generateData = () => {
-    const startTs = parseInt(genStartTs, 10) || Math.floor(Date.now() / 1000)
-    const count = Math.max(1, parseInt(genCount, 10) || 10)
-    const interval = Math.max(1, parseInt(genInterval, 10) || 1)
-    const val = parseFloat(genValue) || 0
-    const valEnd = parseFloat(genValueEnd) || val
-    const amp = parseFloat(genAmplitude) || 50
-    const period = Math.max(1, parseInt(genPeriod, 10) || 20)
-
-    let csv = ''
-    for (let i = 0; i < count; i++) {
-      const ts = startTs + i * interval
-      let v = val
-      switch (pattern) {
-        case 'constant':
-          v = val
-          break
-        case 'ramp':
-          v = count > 1 ? val + (valEnd - val) * (i / (count - 1)) : val
-          break
-        case 'sine':
-          v = val + amp * Math.sin((2 * Math.PI * i) / period)
-          break
-        case 'random':
-          v = val + (Math.random() - 0.5) * 2 * amp
-          break
-      }
-      csv += `${ts},${v.toFixed(4)}\n`
-    }
-
-    setPatchCsvData(csv.trim())
-    parseCsv(csv.trim())
-
-    toast({
-      title: "Generated",
-      description: `${count} data points generated (${pattern} pattern).`,
-    })
-  }
 
   const insertTimestamp = (ts: number) => {
     const suffix = `${ts},`
@@ -216,126 +166,6 @@ export default function DataPatchTool({ selectedKey, onPatchComplete }: DataPatc
             Clear
           </Button>
         </div>
-      </div>
-
-      {/* Data Generator */}
-      <div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowGenerator(!showGenerator)}
-          className="flex items-center gap-1 text-sm font-medium text-gray-700 p-0 h-auto"
-        >
-          {showGenerator ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          <Wand2 className="h-3.5 w-3.5" />
-          Data Generator
-        </Button>
-        {showGenerator && (
-          <Card className="mt-2 shadow-none border-dashed">
-            <CardContent className="pt-4 space-y-3">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                {(['constant', 'ramp', 'sine', 'random'] as const).map(p => (
-                  <Button
-                    key={p}
-                    type="button"
-                    size="sm"
-                    variant={pattern === p ? 'default' : 'outline'}
-                    onClick={() => setPattern(p)}
-                    className="capitalize"
-                  >
-                    {p}
-                  </Button>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Start Timestamp</label>
-                  <Input
-                    type="number"
-                    value={genStartTs}
-                    onChange={e => setGenStartTs(e.target.value)}
-                    placeholder={String(now)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Count</label>
-                  <Input
-                    type="number"
-                    value={genCount}
-                    onChange={e => setGenCount(e.target.value)}
-                    placeholder="20"
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Interval (s)</label>
-                  <Input
-                    type="number"
-                    value={genInterval}
-                    onChange={e => setGenInterval(e.target.value)}
-                    placeholder="1"
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-0.5">Base Value</label>
-                  <Input
-                    type="number"
-                    step="any"
-                    value={genValue}
-                    onChange={e => setGenValue(e.target.value)}
-                    placeholder="100"
-                    className="h-8 text-xs"
-                  />
-                </div>
-                {pattern === 'ramp' && (
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-0.5">End Value</label>
-                    <Input
-                      type="number"
-                      step="any"
-                      value={genValueEnd}
-                      onChange={e => setGenValueEnd(e.target.value)}
-                      placeholder="200"
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                )}
-                {(pattern === 'sine' || pattern === 'random') && (
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-0.5">Amplitude</label>
-                    <Input
-                      type="number"
-                      step="any"
-                      value={genAmplitude}
-                      onChange={e => setGenAmplitude(e.target.value)}
-                      placeholder="50"
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                )}
-                {pattern === 'sine' && (
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-0.5">Period (points)</label>
-                    <Input
-                      type="number"
-                      value={genPeriod}
-                      onChange={e => setGenPeriod(e.target.value)}
-                      placeholder="20"
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                )}
-              </div>
-              <Button type="button" size="sm" onClick={generateData} className="w-full">
-                <Wand2 className="h-4 w-4 mr-1" />
-                Generate &amp; Preview
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* CSV Textarea */}
