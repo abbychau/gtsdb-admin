@@ -1,7 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, ServerIcon, RefreshCw, BarChart3 } from 'lucide-react'
-import { TreeView } from './TreeView'
 import { ServerInfo } from './ServerInfo'
 import {
   Popover,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/popover"
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 interface SidebarProps {
   keys: Array<{ key: string; count: number }>;  // Modified type to include count
@@ -77,11 +77,33 @@ export default function Sidebar({ keys, selectedKey, onSelectKey, onInitKey, onR
           onChange={(e) => setFilter(e.target.value)}
           className="w-full mb-4"
         />
-        <TreeView
-          items={filteredKeys || []}
-          selectedKey={selectedKey}
-          onSelectKey={onSelectKey}
-        />
+        {/* Flat key list — simpler than a tree, mirrors the cloud explorer. */}
+        <div className="space-y-0.5">
+          {(filteredKeys || []).map((k) => {
+            const active = selectedKey === k.key;
+            return (
+              <button
+                key={k.key}
+                type="button"
+                onClick={() => onSelectKey(k.key)}
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
+                  active && "bg-primary/10 font-medium text-primary"
+                )}
+              >
+                <span className="truncate font-mono text-xs">{k.key}</span>
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                  {(k.count ?? 0).toLocaleString()}
+                </span>
+              </button>
+            );
+          })}
+          {(!filteredKeys || filteredKeys.length === 0) && (
+            <p className="px-2 py-4 text-center text-xs text-muted-foreground">
+              {filter ? "No keys match your filter." : "No keys yet."}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
