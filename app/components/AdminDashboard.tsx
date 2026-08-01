@@ -138,10 +138,6 @@ export default function AdminDashboard({ shouldLoadData = true, onOpenSettings }
     }
   }
 
-  const selectedPoints = selectedKey
-    ? (keys.find(k => k.key === selectedKey)?.count ?? 0)
-    : 0
-
   return (
     <div className="flex h-full">
       <Sidebar
@@ -157,7 +153,6 @@ export default function AdminDashboard({ shouldLoadData = true, onOpenSettings }
         {selectedKey ? (
           <KeyDetail
             keyName={selectedKey}
-            points={selectedPoints}
             onBack={handleClearView}
             onDeleteKey={handleDeleteKey}
             onRename={handleRename}

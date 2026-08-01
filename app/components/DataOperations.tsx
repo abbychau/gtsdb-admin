@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Database, Copy, Code, RefreshCw } from 'lucide-react'
+import { Loader2, Database, Copy, Code, RefreshCw, ArrowLeft } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DeleteKeyModal } from './DeleteKeyModal'
 import DataPatchTool from './DataPatchTool'
@@ -32,9 +32,10 @@ interface DataOperationsProps {
   onWrite: () => void
   onDeleteKey: (key: string) => void
   onRename: (oldKey: string, newKey: string) => void
+  onBack?: () => void
 }
 
-export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRename }: DataOperationsProps) {
+export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRename, onBack }: DataOperationsProps) {
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [downsampling, setDownsampling] = useState('')
@@ -682,14 +683,19 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Database className="h-6 w-6" />
-            <CardTitle className="text-2xl font-bold">{selectedKey}</CardTitle>
-          </div>
-          <div className="space-x-2">
+    <div className="space-y-4">
+      {/* Toolbar: back + key + actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button variant="ghost" size="icon" onClick={onBack} title="Back to overview">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <Database className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-bold">{selectedKey}</h2>
+        </div>
+        <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -721,10 +727,10 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
               Delete Key
             </Button>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleReadAndPlot} className="space-y-3">
+      </div>
+
+      {/* Query box */}
+      <form onSubmit={handleReadAndPlot} className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Select value={mode} onValueChange={(v) => setMode(v as 'last' | 'range')}>
               <SelectTrigger className="h-9 w-28">
@@ -1035,7 +1041,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           }}
           keyName={selectedKey}
         />
-      </CardContent>
       <AlertDialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1057,9 +1062,6 @@ export default function DataOperations({ selectedKey, onWrite, onDeleteKey, onRe
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-
-      
-    </Card>
+    </div>
   )
 }
