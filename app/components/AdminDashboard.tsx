@@ -1,41 +1,59 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
-import { TabSystem } from './TabSystem'
+import Overview, { KeyCountItem } from './Overview'
+import KeyDetail from './KeyDetail'
+import MultiQuery from './MultiQuery'
 import { toast } from '@/hooks/use-toast'
 import { InitKeyModal } from './InitKeyModal'
 import { fetchApi } from '@/lib/utils'
-import { useSettings } from '@/settings-context'
-
-interface Tab {
-  id: string
-  title: string
-  keyName: string
-  isMultiQuery?: boolean
-  keys?: string[]
-}
+import { ArrowLeft, BarChart3 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface AdminDashboardProps {
   shouldLoadData?: boolean;
+  onOpenSettings?: () => void;
 }
 
-export default function AdminDashboard({ shouldLoadData = true }: AdminDashboardProps) {
-  const [keys, setKeys] = useState<Array<{ key: string; count: number }>>([]);
-  const [tabs, setTabs] = useState<Tab[]>([])
-  const [activeTabId, setActiveTabId] = useState<string | null>(null)
+export default function AdminDashboard({ shouldLoadData = true, onOpenSettings }: AdminDashboardProps) {
+  const [keys, setKeys] = useState<KeyCountItem[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [multiKeys, setMultiKeys] = useState<string[] | null>(null);
   const [isInitKeyModalOpen, setIsInitKeyModalOpen] = useState(false)
   const [hasLoadedData, setHasLoadedData] = useState(false)
-  const { settings } = useSettings()
 
   useEffect(() => {
-    // Only fetch keys if shouldLoadData is true and we haven't loaded data yet
     if (shouldLoadData && !hasLoadedData) {
       fetchKeys();
       setHasLoadedData(true);
     }
   }, [shouldLoadData, hasLoadedData]);
 
-  // Inline handlers — no iframes, no postMessage
+  const fetchKeys = async () => {
+    const data = await fetchApi({
+      body: JSON.stringify({ operation: 'idswithcount' })
+    })
+    if (data.success) {
+      setKeys(data.data.data)
+    }
+  }
+
+  const handleSelectKey = (key: string) => {
+    setSelectedKey(key)
+    setMultiKeys(null)
+  }
+
+  const handleOpenMultiQuery = (keys: string[]) => {
+    if (keys.length === 0) return
+    setMultiKeys([...keys])
+    setSelectedKey(null)
+  }
+
+  const handleClearView = () => {
+    setSelectedKey(null)
+    setMultiKeys(null)
+  }
+
   const handleKeyWrite = () => {
     fetchKeys()
   }
@@ -47,13 +65,9 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
       })
       if (data.success) {
         setKeys(prevKeys => prevKeys.filter(k => k.key !== key))
-        setTabs(prevTabs => {
-          const newTabs = prevTabs.filter(tab => tab.keyName !== key)
-          if (activeTabId && prevTabs.find(tab => tab.id === activeTabId)?.keyName === key) {
-            setActiveTabId(newTabs.length > 0 ? newTabs[0].id : null)
-          }
-          return newTabs
-        })
+        // Clear the active view if it referenced the deleted key
+        setSelectedKey(prev => (prev === key ? null : prev))
+        setMultiKeys(prev => (prev?.includes(key) ? prev.filter(k => k !== key) : prev))
         toast({
           title: "Success",
           description: `Key "${key}" deleted successfully.`,
@@ -83,11 +97,8 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
         setKeys(prevKeys => prevKeys.map(k =>
           k.key === oldKey ? { ...k, key: newKey } : k
         ))
-        setTabs(prevTabs => prevTabs.map(tab =>
-          tab.keyName === oldKey
-            ? { ...tab, title: newKey, keyName: newKey }
-            : tab
-        ))
+        setSelectedKey(prev => (prev === oldKey ? newKey : prev))
+        setMultiKeys(prev => (prev?.includes(oldKey) ? prev.map(k => (k === oldKey ? newKey : k)) : prev))
         toast({
           title: "Success",
           description: `Key "${oldKey}" renamed to "${newKey}" successfully.`,
@@ -102,74 +113,6 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
         variant: "destructive",
       })
     }
-  }
-
-  const fetchKeys = async () => {
-    const data = await fetchApi({
-      body: JSON.stringify({ operation: 'idswithcount' })
-    })
-    if (data.success) {
-      setKeys(data.data.data)
-    }
-  }
-
-  const createTab = (keyName: string) => {
-    // Check if tab already exists
-    const existingTab = tabs.find(tab => tab.keyName === keyName)
-    if (existingTab) {
-      setActiveTabId(existingTab.id)
-      return
-    }
-
-    // Create new tab
-    const newTab: Tab = {
-      id: `tab-${Date.now()}-${Math.random()}`,
-      title: keyName,
-      keyName: keyName
-    }
-
-    setTabs(prevTabs => [...prevTabs, newTab])
-    setActiveTabId(newTab.id)
-  }
-
-  const openMultiQuery = (keys: string[]) => {
-    if (keys.length === 0) return
-    // A single multi-query tab, updated with the current selection (like the
-    // cloud explorer's multi-select view).
-    const existingTab = tabs.find(tab => tab.isMultiQuery)
-    if (existingTab) {
-      setTabs(prevTabs => prevTabs.map(tab =>
-        tab.isMultiQuery
-          ? { ...tab, title: `Query (${keys.length})`, keyName: keys.join(', '), keys }
-          : tab
-      ))
-      setActiveTabId(existingTab.id)
-      return
-    }
-
-    const newTab: Tab = {
-      id: 'multi-query',
-      title: `Query (${keys.length})`,
-      keyName: keys.join(', '),
-      isMultiQuery: true,
-      keys,
-    }
-
-    setTabs(prevTabs => [...prevTabs, newTab])
-    setActiveTabId(newTab.id)
-  }
-
-  const closeTab = (tabId: string) => {
-    setTabs(prevTabs => {
-      const newTabs = prevTabs.filter(tab => tab.id !== tabId)
-      
-      // If closing the active tab, set active to the last remaining tab
-      if (activeTabId === tabId) {
-        setActiveTabId(newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null)
-      }
-      
-      return newTabs
-    })
   }
 
   const initKey = async (keyName: string) => {
@@ -195,55 +138,62 @@ export default function AdminDashboard({ shouldLoadData = true }: AdminDashboard
     }
   }
 
+  const selectedPoints = selectedKey
+    ? (keys.find(k => k.key === selectedKey)?.count ?? 0)
+    : 0
 
   return (
     <div className="flex h-full">
       <Sidebar
         keys={keys}
-        selectedKey={null}
-        onSelectKey={createTab}
+        selectedKey={selectedKey}
+        onSelectKey={handleSelectKey}
         onInitKey={() => setIsInitKeyModalOpen(true)}
         onRefreshKeys={fetchKeys}
-        onCompare={openMultiQuery}
+        onCompare={handleOpenMultiQuery}
+        onOpenSettings={onOpenSettings}
       />
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1">
-          <TabSystem
-            tabs={tabs}
-            activeTabId={activeTabId}
-            onTabSelect={setActiveTabId}
-            onTabClose={closeTab}
+      <div className="flex-1 min-w-0">
+        {selectedKey ? (
+          <KeyDetail
+            keyName={selectedKey}
+            points={selectedPoints}
+            onBack={handleClearView}
             onDeleteKey={handleDeleteKey}
             onRename={handleRename}
             onKeyWrite={handleKeyWrite}
           />
-        </div>
-        {/* footer about message - only show when no tabs are open */}
-        {tabs.length === 0 && (
-          <div className="p-4 text-muted-foreground text-sm border-t">
-            <p>
-              GTSDB is a time-series database built with Natively no-dep in Golang.
-            </p>
-            <p>
-              <a
-                href="https://github.com/abbychau/gtsdb"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                View source code on GitHub
-              </a>
-            </p>
+        ) : multiKeys ? (
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between border-b px-4 py-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BarChart3 className="h-4 w-4" />
+                <span>
+                  Comparing {multiKeys.length} key{multiKeys.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleClearView}>
+                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+                Overview
+              </Button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <MultiQuery keys={multiKeys} />
+            </div>
           </div>
+        ) : (
+          <Overview
+            keys={keys}
+            onSelectKey={handleSelectKey}
+            onAddKey={() => setIsInitKeyModalOpen(true)}
+            onRefresh={fetchKeys}
+          />
         )}
       </div>
       <InitKeyModal
         isOpen={isInitKeyModalOpen}
         onClose={() => setIsInitKeyModalOpen(false)}
-        onInitKey={(keyName) => {
-          initKey(keyName)
-          setIsInitKeyModalOpen(false)
-        }}
+        onInitKey={initKey}
       />
     </div>
   )

@@ -2,39 +2,48 @@
 import { useEffect, useState, useRef } from 'react'
 import AdminDashboard from '@/components/AdminDashboard'
 import { Toaster } from '@/components/ui/toaster'
-import { Settings } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { SettingsModal } from './settings-modal'
 import { useSettings } from './settings-context'
 
 export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { settings, initializeFromURL } = useSettings();
+  const { initializeFromURL } = useSettings();
   const initialized = useRef(false);
   const [shouldLoadData, setShouldLoadData] = useState(false);
 
   useEffect(() => {
     if (initialized.current) return;
-    
+
     const url = new URL(window.location.href);
     const apiUrl = url.searchParams.get('apiurl');
-    
+
     if (apiUrl) {
       initializeFromURL(apiUrl);
+      setIsSettingsOpen(false);
+      setShouldLoadData(true);
+      initialized.current = true;
+      return;
     }
-    
-    // Show settings modal on startup if API URL is empty
-    if (!settings.apiUrl) {
+
+    // Read saved settings synchronously so the modal only appears when the
+    // user genuinely has no API URL configured yet.
+    let savedApiUrl = '';
+    try {
+      const ls = localStorage.getItem('gtsdb-settings');
+      if (ls) savedApiUrl = JSON.parse(ls).apiUrl || '';
+    } catch {
+      savedApiUrl = '';
+    }
+
+    if (!savedApiUrl) {
       setIsSettingsOpen(true);
-      // Don't load data initially
       setShouldLoadData(false);
     } else {
-      // If API URL is set, load data immediately
+      setIsSettingsOpen(false);
       setShouldLoadData(true);
     }
-    
     initialized.current = true;
-  }, [initializeFromURL, settings.apiUrl]);
+  }, [initializeFromURL]);
 
   const handleSettingsClose = () => {
     setIsSettingsOpen(false);
@@ -43,21 +52,11 @@ export default function Home() {
   };
 
   return (
-    <main className="h-screen flex flex-col">
-      <header className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">🐹 GTSDB Admin</h1>
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
-      <div className="flex-1 overflow-hidden">
-        <AdminDashboard shouldLoadData={shouldLoadData} />
-      </div>
+    <main className="h-screen overflow-hidden bg-background">
+      <AdminDashboard
+        shouldLoadData={shouldLoadData}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={handleSettingsClose}
