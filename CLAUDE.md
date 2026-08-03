@@ -8,15 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` - Start Next.js development server on port 3000
 - `npm run build` - Build the Next.js application for production
 - `npm run start` - Start the production server
-- `npm run lint` - Run ESLint with automatic fixes
-
-### Electron
-- `npm run dev-electron` - Start the Electron application in development mode
-- `npm run build-electron` - Build both Next.js app and create Electron distributable
+- `npm run lint` - Run ESLint (no auto-fix)
+- `npm run lint:fix` - Run ESLint with automatic fixes
 
 ## Architecture
 
-This is a Next.js 14 TypeScript application that serves as an admin interface for GTSDB (Go Time Series Database). The app has both web and Electron deployment options.
+This is a Next.js 14 TypeScript application that serves as an admin interface for GTSDB (Go Time Series Database).
 
 ### Core Structure
 - **App Router**: Uses Next.js 14 app directory structure
@@ -46,11 +43,6 @@ This is a Next.js 14 TypeScript application that serves as an admin interface fo
 ### State Management Pattern
 Settings flow: URL params → SettingsContext → localStorage persistence
 Config flow: API URL change → fetch from GTSDB → Redis storage → ConfigContext
-
-### Electron Integration
-- `electron.js` handles main process, spawns Next.js server on dynamic port
-- Security: nodeIntegration disabled, contextIsolation enabled
-- Cross-platform npm command handling (npm vs npm.cmd)
 
 ### TypeScript Configuration
 - Path aliases: `@/*` maps to `./app/*`

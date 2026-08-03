@@ -7,19 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --fix"
-  },
-  "build": {
-    "appId": "com.abby.yourapp",
-    "files": [
-      ".next/**/*",
-      "next.config.mjs",
-      "node_modules",
-      "package.json/**/*"
-    ],
-    "directories": {
-      "output": "dist"
-    }
+    "lint": "next lint",
+    "lint:fix": "next lint --fix"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.2",
