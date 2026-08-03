@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         let totalEnergySum = 0;
         let averageValueSum = 0;
         let totalDataPoints = 0;
-        let combinedDailyUsage: { [date: string]: { energy: number, averageValue: number, dataPoints: number } } = {};
+        const combinedDailyUsage: { [date: string]: { energy: number, averageValue: number, dataPoints: number } } = {};
         let firstUnit = '';
 
         // Loop through keys
