@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from 'redis';
+import { getRedis } from '@/lib/redis'
 
 // Add CORS headers to all responses
 function corsResponse(response: NextResponse) {
@@ -8,8 +8,6 @@ function corsResponse(response: NextResponse) {
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-url')
     return response
 }
-
-const redis = await createClient({ url: process.env.REDIS_URL }).connect();
 
 export async function OPTIONS(req: Request) {
     return corsResponse(NextResponse.json({}, { status: 200 }))
@@ -64,7 +62,8 @@ export async function POST(req: Request) {
         const durationInDays = durationInSeconds / (24 * 3600);
 
         // 1. Fetch Config
-        const configString = await redis.get(apiUrl);
+        const redis = await getRedis()
+        const configString = redis ? await redis.get(apiUrl) : null;
         const config = configString ? JSON.parse(configString) : {};
 
         // Initialize Aggregates

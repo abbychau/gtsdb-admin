@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from 'redis';
+import { getRedis } from '@/lib/redis'
 
 // Add CORS headers to all responses
 function corsResponse(response: NextResponse) {
@@ -9,7 +9,6 @@ function corsResponse(response: NextResponse) {
   return response
 }
 
-const redis = await createClient({ url: process.env.REDIS_URL }).connect();
 async function fetchFromAPI(body: any, apiUrl: string) {
   try {
     const response = await fetch(apiUrl, {
@@ -74,7 +73,8 @@ export async function POST(req: Request) {
 
     switch (body.operation) {
       case 'getapiurlconfig': {
-        const configString = await redis.get(apiUrl);
+        const redis = await getRedis()
+        const configString = redis ? await redis.get(apiUrl) : null;
 
         if (!configString) {
           return corsResponse(NextResponse.json({ success: true, data: {} }))
@@ -118,7 +118,10 @@ export async function POST(req: Request) {
           
           // Store the config in Redis
           const configToStore = JSON.stringify(body.config);
-          await redis.set(apiUrl, configToStore);
+          const redis = await getRedis()
+          if (redis) {
+            await redis.set(apiUrl, configToStore);
+          }
           
           return NextResponse.json({ success: true, message: 'Configuration saved successfully' });
         } catch (error) {
